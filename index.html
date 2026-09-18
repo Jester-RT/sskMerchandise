@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2026 T-Shirts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink-900:#070402; --ink-800:#1c140f; --ink-700:#2c211a; --ink-600:#4a3b30;
+  --ink-500:#6f5d4f; --ink-400:#9b8c7e; --ink-300:#c9bdb0; --ink-200:#e6ddd0;
+  --ink-100:#f3ece1; --paper:#fbf7ef; --gi-white:#ffffff;
+  --green-700:#3c6e14; --green-600:#4f8f1a; --green-200:#d7e9c2;
+  --gold-600:#bf9c05; --sakura-600:#eb3f3f; --burnt-600:#823d0e;
+  --radius-md:14px; --radius-lg:22px; --radius-xl:32px;
+  --shadow-sm:0 1px 3px rgba(44,33,26,.10);
+  --shadow-md:0 6px 20px rgba(44,33,26,.12);
+  --shadow-lg:0 18px 46px rgba(44,33,26,.22);
+  --ease-out:cubic-bezier(.2,.7,.3,1);
+  --font:"Noto Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  font-family:var(--font); color:var(--ink-600); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.5;
+}
+img{display:block;max-width:100%}
+
+/* ---------- Header ---------- */
+.site-header{
+  background:var(--ink-900);
+  color:var(--gi-white);
+  padding:26px 0 30px;
+  border-bottom:4px solid var(--gold-600);
+}
+.header-inner{
+  max-width:1280px; margin:0 auto; padding:0 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:24px;
+}
+.header-text h1{
+  font-size:clamp(28px,5vw,46px); font-weight:600; letter-spacing:-.01em;
+  margin:0; color:var(--gi-white); line-height:1.1;
+}
+.header-text p{
+  margin:8px 0 0; color:#cfc4b6; font-size:15px; max-width:52ch;
+}
+.header-text .eyebrow{
+  display:block; font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+  font-weight:600; color:var(--gold-600); margin:0 0 8px;
+}
+.logo{width:clamp(78px,11vw,120px); height:auto; flex:none}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1280px; margin:0 auto; padding:0 24px}
+.intro{
+  margin:28px auto 0; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+}
+.note{
+  display:flex; align-items:flex-start; gap:10px;
+  background:#fdf3e6; border:1px solid #edd6b4; color:var(--burnt-600);
+  border-radius:var(--radius-md); padding:12px 16px; font-size:14px; font-weight:500;
+  flex:1 1 320px; margin:0;
+}
+.note strong{color:var(--ink-800)}
+.note .dot{
+  width:14px;height:14px;border-radius:50%;background:#f07f13;flex:none;
+  margin-top:3px;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(0,0,0,.12);
+}
+.hint{
+  margin:0;
+  font-size:13px; color:var(--ink-400); flex:1 1 200px; text-align:right;
+}
+
+/* ---------- Grid ---------- */
+.grid{
+  display:grid; gap:26px; margin:26px 0 60px;
+  grid-template-columns:repeat(auto-fill,minmax(420px,1fr));
+}
+@media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+.card{
+  background:var(--gi-white); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md); overflow:hidden;
+  display:flex; flex-direction:column;
+  transition:box-shadow .25s var(--ease-out), transform .25s var(--ease-out);
+}
+.card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)}
+
+.card-head{
+  padding:18px 22px 12px; display:flex; align-items:baseline; gap:10px;
+  border-bottom:1px solid var(--ink-200);
+}
+.card-num{
+  font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+  color:var(--green-600); flex:none;
+}
+.card-title{
+  margin:0; font-size:19px; font-weight:600; color:var(--ink-900); line-height:1.25;
+}
+
+.shot{
+  position:relative; background:var(--ink-100);
+  padding:14px; cursor:zoom-in;
+}
+.shot img{
+  width:100%; height:auto; border-radius:10px;
+  transition:opacity .18s var(--ease-out);
+}
+.shot.loading img{opacity:.25}
+.shot .zoom{
+  position:absolute; right:22px; bottom:22px;
+  background:rgba(7,4,2,.62); color:#fff; border-radius:999px;
+  font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+  padding:6px 12px; opacity:0; transition:opacity .2s var(--ease-out);
+  pointer-events:none;
+}
+.shot:hover .zoom{opacity:1}
+.views{
+  margin:0;
+  font-size:11px; color:var(--ink-400); text-align:center;
+  letter-spacing:.14em; text-transform:uppercase; font-weight:600;
+  padding:0 0 12px; background:var(--ink-100);
+}
+
+.card-body{padding:16px 22px 22px; display:flex; flex-direction:column; gap:14px; flex:1}
+
+.swatch-label{
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  font-weight:600; color:var(--ink-400); margin:0 0 8px;
+}
+.swatch-label b{color:var(--ink-800); font-weight:600; letter-spacing:0; text-transform:none; font-size:14px; margin-left:8px}
+.swatches{display:flex; flex-wrap:wrap; gap:9px; padding:0; margin:0; list-style:none}
+.swatch{
+  width:34px; height:34px; border-radius:50%; padding:0; cursor:pointer;
+  border:1px solid var(--ink-300); background-clip:padding-box;
+  box-shadow:var(--shadow-sm); position:relative;
+  transition:transform .16s var(--ease-out), box-shadow .16s var(--ease-out);
+}
+.swatch:hover{transform:translateY(-2px)}
+.swatch:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
+.swatch[aria-pressed="true"]{
+  box-shadow:0 0 0 2px var(--gi-white), 0 0 0 4px var(--green-600), var(--shadow-sm);
+}
+.swatch.adult-only::after{
+  content:"A"; position:absolute; right:-3px; bottom:-3px;
+  width:15px; height:15px; border-radius:50%;
+  background:var(--ink-900); color:#fff; font-size:9px; font-weight:700;
+  display:grid; place-items:center; border:1.5px solid #fff;
+}
+
+.sizes{border-top:1px solid var(--ink-200); padding-top:14px; margin-top:auto}
+.size-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+.size-row:last-child{margin-bottom:0}
+.size-key{
+  font-size:11px; letter-spacing:.12em; text-transform:uppercase; font-weight:700;
+  color:var(--ink-400); width:52px; flex:none;
+}
+.chip{
+  font-size:12px; font-weight:600; color:var(--ink-700);
+  background:var(--ink-100); border:1px solid var(--ink-200);
+  border-radius:999px; padding:4px 11px;
+}
+.size-row.muted .chip{background:transparent; color:var(--ink-300); border-style:dashed}
+.adult-msg{
+  font-size:12.5px; color:var(--burnt-600); font-weight:600;
+  background:#fdf3e6; border-radius:10px; padding:8px 12px; margin:10px 0 0;
+  display:none;
+}
+.card.is-adult-only .adult-msg{display:block}
+
+/* ---------- Lightbox ---------- */
+.lightbox{
+  position:fixed; inset:0; background:rgba(44,33,26,.82);
+  display:none; align-items:center; justify-content:center; z-index:50; padding:24px;
+}
+.lightbox.open{display:flex}
+.lightbox figure{margin:0; max-width:1500px; width:100%; text-align:center}
+.lightbox img{
+  width:100%; height:auto; max-height:76vh; object-fit:contain;
+  background:var(--paper); border-radius:var(--radius-md); padding:12px;
+}
+.lightbox figcaption{
+  color:#fff; margin-top:16px; font-size:15px; font-weight:500;
+}
+.lightbox figcaption span{color:#cfc4b6; font-weight:400}
+.lb-close{
+  position:absolute; top:18px; right:22px; width:44px; height:44px;
+  border-radius:50%; border:none; background:rgba(255,255,255,.14); color:#fff;
+  font-size:22px; line-height:1; cursor:pointer;
+}
+.lb-close:hover{background:rgba(255,255,255,.26)}
+.lb-nav{
+  position:absolute; top:50%; transform:translateY(-50%);
+  width:52px; height:52px; border-radius:50%; border:none;
+  background:rgba(255,255,255,.14); color:#fff; font-size:24px; cursor:pointer;
+}
+.lb-nav:hover{background:rgba(255,255,255,.26)}
+.lb-prev{left:18px} .lb-next{right:18px}
+
+footer{
+  border-top:1px solid var(--ink-200); padding:26px 0 44px;
+  font-size:13px; color:var(--ink-400); text-align:center;
+}
+footer .kanji{color:var(--gold-600); font-size:16px; margin-bottom:6px}
+@media print{
+  .swatches,.hint,.zoom,.lightbox{display:none!important}
+  .card{break-inside:avoid; box-shadow:none; border:1px solid var(--ink-200)}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-text">
+      <span class="eyebrow">Stafford Shotokan Karate</span>
+      <h1>2026 T-Shirts</h1>
+      <p>Ten designs, eight colours. Tap a colour dot to preview any design, and click a shirt to enlarge it.</p>
+    </div>
+    <!-- Works locally (logo lives in ../../library) and when deployed with the
+         logo copied alongside this file. -->
+    <img class="logo" src="../../library/ssk-logo-white-300dpi.png"
+         onerror="this.onerror=null;this.src='ssk-logo-white-300dpi.png';"
+         alt="Stafford Shotokan Karate club logo">
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="intro">
+    <p class="note">
+      <span class="dot" aria-hidden="true"></span>
+      <span><strong>Orange Crush is available in adult sizes only.</strong> Every other colour comes in both kids' and adult sizes.</span>
+    </p>
+    <p class="hint">Each image shows the front and back of the shirt.</p>
+  </div>
+
+  <div class="grid" id="grid"></div>
+</main>
+
+<footer>
+  <div class="kanji">空手道</div>
+  Stafford Shotokan Karate · 2026 clothing range
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged shirt image">
+  <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous colour">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next colour">&#8250;</button>
+  <figure>
+    <img id="lbImg" alt="">
+    <figcaption id="lbCap"></figcaption>
+  </figure>
+</div>
+
+<script>
+const COLOURS = [
+  { file:"Arctic_White",   name:"Arctic White",   hex:"#f6f4ef", adultOnly:false },
+  { file:"Natural_Stone",  name:"Natural Stone",  hex:"#c4b7ae", adultOnly:false },
+  { file:"Airforce_Blue",  name:"Airforce Blue",  hex:"#5d7793", adultOnly:false },
+  { file:"Bottle_Green",   name:"Bottle Green",   hex:"#1b4332", adultOnly:false },
+  { file:"Fire_Red",       name:"Fire Red",       hex:"#c8102e", adultOnly:false },
+  { file:"Orange_Crush",   name:"Orange Crush",   hex:"#f07f13", adultOnly:true  },
+  { file:"Solid_Charcoal", name:"Solid Charcoal", hex:"#4c4c4c", adultOnly:false },
+  { file:"Deep_Black",     name:"Deep Black",     hex:"#1a1a1a", adultOnly:false }
+];
+
+const DESIGNS = [
+  { n:1,  folder:"Design 1 - Mount Fuji (Front)",  title:"Mount Fuji (Front)"  },
+  { n:2,  folder:"Design 2 - Mount Fuji (Back)",   title:"Mount Fuji (Back)"   },
+  { n:3,  folder:"Design 3 - Bonsai Karate",       title:"Bonsai Karate"       },
+  { n:4,  folder:"Design 4 - Brushed Bonsai",      title:"Brushed Bonsai"      },
+  { n:5,  folder:"Design 5 - 10 Katas",            title:"10 Katas"            },
+  { n:6,  folder:"Design 6 - Mount Fuji Karate",   title:"Mount Fuji Karate"   },
+  { n:7,  folder:"Design 7 - Weathered Tiger",     title:"Weathered Tiger"     },
+  { n:8,  folder:"Design 8 - Sakura Tiger",        title:"Sakura Tiger"        },
+  { n:9,  folder:"Design 9 - Sakura Mountains",    title:"Sakura Mountains"    },
+  { n:10, folder:"Design 10 - Tiger Belts",        title:"Tiger Belts"         }
+];
+
+const KIDS  = ["3–4 yrs","5–6 yrs","7–8 yrs","9–11 yrs","12–13 yrs"];
+const ADULT = ["S","M","L","XL","2XL"];
+
+const src = (design, colour) =>
+  encodeURIComponent(design.folder) + "/" + encodeURIComponent(colour.file) + ".png";
+
+const grid = document.getElementById("grid");
+
+DESIGNS.forEach((design, di) => {
+  const card = document.createElement("article");
+  card.className = "card";
+  card.dataset.index = di;
+  card.innerHTML = `
+    <div class="card-head">
+      <span class="card-num">Design ${design.n}</span>
+      <h2 class="card-title">${design.title}</h2>
+    </div>
+    <div class="shot" role="button" tabindex="0" aria-label="Enlarge ${design.title}">
+      <img alt="">
+      <span class="zoom">Click to enlarge</span>
+    </div>
+    <p class="views">Front &nbsp;·&nbsp; Back</p>
+    <div class="card-body">
+      <div>
+        <p class="swatch-label">Colour <b class="cname"></b></p>
+        <ul class="swatches"></ul>
+      </div>
+      <div class="sizes">
+        <div class="size-row kids">
+          <span class="size-key">Kids</span>
+          ${KIDS.map(s => `<span class="chip">${s}</span>`).join("")}
+        </div>
+        <div class="size-row">
+          <span class="size-key">Adult</span>
+          ${ADULT.map(s => `<span class="chip">${s}</span>`).join("")}
+        </div>
+        <p class="adult-msg">Orange Crush is available in adult sizes only.</p>
+      </div>
+    </div>`;
+
+  const list = card.querySelector(".swatches");
+  COLOURS.forEach((colour, ci) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.className = "swatch" + (colour.adultOnly ? " adult-only" : "");
+    b.style.background = colour.hex;
+    b.type = "button";
+    b.title = colour.name + (colour.adultOnly ? " (adult sizes only)" : "");
+    b.setAttribute("aria-label", b.title);
+    b.setAttribute("aria-pressed", ci === 0 ? "true" : "false");
+    b.addEventListener("click", () => select(card, design, ci));
+    li.appendChild(b);
+    list.appendChild(li);
+  });
+
+  grid.appendChild(card);
+  select(card, design, 0);
+});
+
+function select(card, design, ci){
+  const colour = COLOURS[ci];
+  card.dataset.colour = ci;
+  const img = card.querySelector(".shot img");
+  const shot = card.querySelector(".shot");
+  shot.classList.add("loading");
+  img.onload = () => shot.classList.remove("loading");
+  img.onerror = () => shot.classList.remove("loading");
+  img.src = src(design, colour);
+  img.alt = `${design.title} t-shirt in ${colour.name} — front and back`;
+  shot.setAttribute("aria-label", `Enlarge ${design.title} in ${colour.name}`);
+  card.querySelector(".cname").textContent = colour.name;
+  card.querySelectorAll(".swatch").forEach((b, i) =>
+    b.setAttribute("aria-pressed", i === ci ? "true" : "false"));
+  card.classList.toggle("is-adult-only", colour.adultOnly);
+  card.querySelector(".size-row.kids").classList.toggle("muted", colour.adultOnly);
+}
+
+/* ---------- Lightbox ---------- */
+const lb = document.getElementById("lightbox");
+const lbImg = document.getElementById("lbImg");
+const lbCap = document.getElementById("lbCap");
+let lbDesign = 0, lbColour = 0, lbOpener = null;
+const pageRegions = () => [document.querySelector("header"), document.querySelector("main"), document.querySelector("footer")];
+
+function openLb(di, ci, opener){
+  lbDesign = di; lbColour = ci; lbOpener = opener || null;
+  paintLb(); lb.classList.add("open");
+  document.body.style.overflow = "hidden";
+  pageRegions().forEach(el => el && el.setAttribute("inert", ""));
+  document.getElementById("lbClose").focus();
+}
+function paintLb(){
+  const d = DESIGNS[lbDesign], c = COLOURS[lbColour];
+  lbImg.src = src(d, c);
+  lbImg.alt = `${d.title} t-shirt in ${c.name} — front and back`;
+  lbCap.innerHTML = `<strong>Design ${d.n} · ${d.title}</strong> &nbsp;<span>${c.name}${c.adultOnly ? " — adult sizes only" : ""}</span>`;
+}
+function stepLb(dir){
+  lbColour = (lbColour + dir + COLOURS.length) % COLOURS.length;
+  paintLb();
+  const card = grid.children[lbDesign];
+  select(card, DESIGNS[lbDesign], lbColour);
+}
+function closeLb(){
+  lb.classList.remove("open");
+  document.body.style.overflow = "";
+  pageRegions().forEach(el => el && el.removeAttribute("inert"));
+  if (lbOpener) lbOpener.focus();
+  lbOpener = null;
+}
+
+grid.addEventListener("click", e => {
+  const shot = e.target.closest(".shot");
+  if (!shot) return;
+  const card = shot.closest(".card");
+  openLb(+card.dataset.index, +card.dataset.colour, shot);
+});
+grid.addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const shot = e.target.closest(".shot");
+  if (!shot) return;
+  e.preventDefault();
+  const card = shot.closest(".card");
+  openLb(+card.dataset.index, +card.dataset.colour, shot);
+});
+
+document.getElementById("lbClose").addEventListener("click", closeLb);
+document.getElementById("lbPrev").addEventListener("click", () => stepLb(-1));
+document.getElementById("lbNext").addEventListener("click", () => stepLb(1));
+lb.addEventListener("click", e => { if (e.target === lb) closeLb(); });
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("open")) return;
+  if (e.key === "Escape") closeLb();
+  if (e.key === "ArrowLeft") stepLb(-1);
+  if (e.key === "ArrowRight") stepLb(1);
+});
+</script>
+</body>
+</html>
