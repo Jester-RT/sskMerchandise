@@ -1,0 +1,609 @@
+#!/usr/bin/env python3
+"""
+Rebuilds index.html for the SSK clothing store page.
+
+Scans the folder structure:
+
+    <Product Type>/<Design Name>/<Colour>.png
+
+...and regenerates index.html with the designs, colours and swatch colours it
+finds. Swatch colours are sampled from the garment itself, so they always match
+the real product.
+
+Usage (from this folder):   python build-page.py
+
+Add a new design by dropping in a folder of colour PNGs and re-running it.
+"""
+
+import json
+import os
+import re
+import sys
+from collections import Counter
+
+try:
+    from PIL import Image
+except ImportError:
+    sys.exit("Pillow is required:  pip install Pillow")
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, "index.html")
+
+SITE_TITLE = "Stafford Shotokan Karate Club Clothing"
+EYEBROW = "2026 Range"
+LOGO = "ssk-logo-white-300dpi.png"
+
+# Colours sold in adult sizes only, keyed by product type.
+ADULT_ONLY = {
+    "T-Shirts": {"Orange_Crush", "Purple"},
+}
+
+KIDS_SIZES = ["3–4 yrs", "5–6 yrs", "7–8 yrs", "9–11 yrs", "12–13 yrs"]
+ADULT_SIZES = ["S", "M", "L", "XL", "2XL"]
+
+# Order the product types appear in. Anything not listed is appended A–Z.
+TYPE_ORDER = ["T-Shirts", "Hoodies"]
+
+# Order colours appear in on a card. Anything not listed is appended A–Z.
+COLOUR_ORDER = [
+    "Arctic_White", "Natural_Stone", "Light_Blue", "Airforce_Blue", "Blue",
+    "New_French_Navy", "Bottle_Green", "Fire_Red", "Maroon", "Orange_Crush",
+    "Purple", "Dusty_Purple", "Charcoal", "Solid_Charcoal", "Black", "Deep_Black",
+]
+
+
+def natural_key(s):
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
+
+
+def ordered(items, preferred):
+    known = [x for x in preferred if x in items]
+    rest = sorted(set(items) - set(preferred), key=natural_key)
+    return known + rest
+
+
+def pretty(stem):
+    return stem.replace("_", " ")
+
+
+def design_title(folder):
+    """'Design 7 - Mount Fuji (Option A)' -> (7, 'Mount Fuji (Option A)')"""
+    m = re.match(r"\s*Design\s+(\d+)\s*[-–]\s*(.+)", folder)
+    if m:
+        return int(m.group(1)), m.group(2).strip()
+    return None, folder.strip()
+
+
+def garment_hex(path):
+    """Modal colour of the left-hand (front) garment body, ignoring the print."""
+    im = Image.open(path).convert("RGBA")
+    im.thumbnail((500, 500))
+    w, h = im.size
+    px = im.load()
+    counts = Counter()
+    for y in range(int(h * 0.15), int(h * 0.92), 2):
+        for x in range(int(w * 0.03), int(w * 0.48), 2):
+            r, g, b, a = px[x, y]
+            if a < 250:
+                continue
+            counts[(r // 4 * 4, g // 4 * 4, b // 4 * 4)] += 1
+    if not counts:
+        return "#cccccc"
+    (r, g, b), _ = counts.most_common(1)[0]
+    return "#%02x%02x%02x" % (r, g, b)
+
+
+def scan():
+    types = [d for d in os.listdir(HERE)
+             if os.path.isdir(os.path.join(HERE, d))
+             and not d.startswith(".")]
+    swatch_cache = {}
+    products = []
+
+    for ptype in ordered(types, TYPE_ORDER):
+        tpath = os.path.join(HERE, ptype)
+        folders = [d for d in os.listdir(tpath)
+                   if os.path.isdir(os.path.join(tpath, d))]
+        for folder in sorted(folders, key=natural_key):
+            dpath = os.path.join(tpath, folder)
+            stems = [f[:-4] for f in os.listdir(dpath) if f.lower().endswith(".png")]
+            if not stems:
+                print(f"  ! skipping (no images): {ptype}/{folder}")
+                continue
+            num, title = design_title(folder)
+            with Image.open(os.path.join(dpath, stems[0] + ".png")) as probe:
+                iw, ih = probe.size
+            colours = []
+            for stem in ordered(stems, COLOUR_ORDER):
+                key = (ptype, stem)
+                if key not in swatch_cache:
+                    swatch_cache[key] = garment_hex(os.path.join(dpath, stem + ".png"))
+                colours.append({
+                    "file": stem,
+                    "name": pretty(stem),
+                    "hex": swatch_cache[key],
+                    "adultOnly": stem in ADULT_ONLY.get(ptype, set()),
+                })
+            products.append({
+                "type": ptype,
+                "n": num,
+                "folder": folder,
+                "title": title,
+                "path": f"{ptype}/{folder}",
+                "w": iw,
+                "h": ih,
+                "colours": colours,
+            })
+    return products
+
+
+TEMPLATE = r"""<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink-900:#070402; --ink-800:#1c140f; --ink-700:#2c211a; --ink-600:#4a3b30;
+  --ink-500:#6f5d4f; --ink-400:#9b8c7e; --ink-300:#c9bdb0; --ink-200:#e6ddd0;
+  --ink-100:#f3ece1; --paper:#fbf7ef; --gi-white:#ffffff;
+  --green-700:#3c6e14; --green-600:#4f8f1a; --green-200:#d7e9c2;
+  --gold-600:#bf9c05; --burnt-600:#823d0e;
+  --radius-md:14px; --radius-lg:22px;
+  --shadow-sm:0 1px 3px rgba(44,33,26,.10);
+  --shadow-md:0 6px 20px rgba(44,33,26,.12);
+  --shadow-lg:0 18px 46px rgba(44,33,26,.22);
+  --ease-out:cubic-bezier(.2,.7,.3,1);
+  --font:"Noto Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--font); color:var(--ink-600); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.5}
+img{display:block;max-width:100%}
+
+/* Header */
+.site-header{background:var(--ink-900); color:var(--gi-white);
+  padding:26px 0 30px; border-bottom:4px solid var(--gold-600)}
+.header-inner{max-width:1280px; margin:0 auto; padding:0 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:24px}
+.header-text h1{font-size:clamp(24px,3.6vw,40px); font-weight:600;
+  letter-spacing:-.01em; margin:0; color:var(--gi-white); line-height:1.12}
+.header-text p{margin:10px 0 0; color:#cfc4b6; font-size:15px; max-width:56ch}
+.header-text .eyebrow{display:block; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; font-weight:600; color:var(--gold-600); margin:0 0 8px}
+.logo{width:clamp(78px,11vw,120px); height:auto; flex:none}
+
+.wrap{max-width:1280px; margin:0 auto; padding:0 24px}
+
+/* Filter bar */
+.toolbar{position:sticky; top:0; z-index:20; background:rgba(251,247,239,.94);
+  backdrop-filter:blur(6px); border-bottom:1px solid var(--ink-200);
+  margin-bottom:26px}
+.toolbar-inner{max-width:1280px; margin:0 auto; padding:14px 24px;
+  display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+  justify-content:space-between}
+.filters{display:flex; gap:8px; flex-wrap:wrap; margin:0; padding:0; list-style:none}
+.filter{font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  border:1px solid var(--ink-300); background:var(--gi-white); color:var(--ink-700);
+  border-radius:999px; padding:9px 18px; box-shadow:var(--shadow-sm);
+  transition:transform .16s var(--ease-out), background .16s var(--ease-out)}
+.filter:hover{transform:translateY(-1px)}
+.filter:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
+.filter[aria-pressed="true"]{background:var(--green-600); border-color:var(--green-700);
+  color:#fff}
+.filter .count{opacity:.65; font-weight:500; margin-left:6px}
+.result-count{font-size:13px; color:var(--ink-400); margin:0}
+
+.note{display:flex; align-items:flex-start; gap:10px; margin:0 0 24px;
+  background:#fdf3e6; border:1px solid #edd6b4; color:var(--burnt-600);
+  border-radius:var(--radius-md); padding:12px 16px; font-size:14px; font-weight:500}
+.note strong{color:var(--ink-800)}
+.note .dots{display:flex; gap:4px; flex:none; margin-top:3px}
+.note .dots i{width:14px;height:14px;border-radius:50%;display:block;
+  box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(0,0,0,.12)}
+
+/* Grid */
+.grid{display:grid; gap:26px; margin:0 0 60px;
+  grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
+@media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+.card{background:var(--gi-white); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md); overflow:hidden; display:flex; flex-direction:column;
+  transition:box-shadow .25s var(--ease-out), transform .25s var(--ease-out)}
+.card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)}
+.card[hidden]{display:none}
+
+.card-head{padding:16px 22px 12px; border-bottom:1px solid var(--ink-200)}
+.card-kicker{display:flex; align-items:center; gap:10px; margin:0 0 4px}
+.pill{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  border-radius:999px; padding:3px 10px; background:var(--green-200);
+  color:var(--green-700)}
+.pill.hoodies{background:#e2e0ef; color:#3b357a}
+.card-num{font-size:11px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-400)}
+.card-title{margin:0; font-size:19px; font-weight:600; color:var(--ink-900);
+  line-height:1.25}
+
+.shot{position:relative; background:var(--ink-100); padding:14px; cursor:zoom-in}
+.shot img{width:100%; height:auto; border-radius:10px;
+  transition:opacity .18s var(--ease-out)}
+.shot.loading img{opacity:.25}
+.shot .zoom{position:absolute; right:22px; bottom:22px; background:rgba(7,4,2,.62);
+  color:#fff; border-radius:999px; font-size:11px; font-weight:600;
+  letter-spacing:.06em; text-transform:uppercase; padding:6px 12px; opacity:0;
+  transition:opacity .2s var(--ease-out); pointer-events:none}
+.shot:hover .zoom{opacity:1}
+@media (hover:none){ .shot .zoom{opacity:.85} }
+.views{margin:0; font-size:11px; color:var(--ink-400); text-align:center;
+  letter-spacing:.14em; text-transform:uppercase; font-weight:600;
+  padding:0 0 12px; background:var(--ink-100)}
+
+.card-body{padding:16px 22px 22px; display:flex; flex-direction:column;
+  gap:14px; flex:1}
+.swatch-label{margin:0 0 8px; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; font-weight:600; color:var(--ink-400)}
+.swatch-label b{color:var(--ink-800); font-weight:600; letter-spacing:0;
+  text-transform:none; font-size:14px; margin-left:8px}
+.swatches{display:flex; flex-wrap:wrap; gap:9px; padding:0; margin:0; list-style:none}
+.swatch{width:34px; height:34px; border-radius:50%; padding:0; cursor:pointer;
+  border:1px solid var(--ink-300); background-clip:padding-box;
+  box-shadow:var(--shadow-sm); position:relative;
+  transition:transform .16s var(--ease-out), box-shadow .16s var(--ease-out)}
+.swatch:hover{transform:translateY(-2px)}
+.swatch:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
+.swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--gi-white),
+  0 0 0 4px var(--green-600), var(--shadow-sm)}
+.swatch.adult-only::after{content:"A"; position:absolute; right:-3px; bottom:-3px;
+  width:15px; height:15px; border-radius:50%; background:var(--ink-900); color:#fff;
+  font-size:9px; font-weight:700; display:grid; place-items:center;
+  border:1.5px solid #fff}
+
+.sizes{border-top:1px solid var(--ink-200); padding-top:14px; margin-top:auto}
+.size-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+.size-row:last-of-type{margin-bottom:0}
+.size-key{font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  font-weight:700; color:var(--ink-400); width:52px; flex:none}
+.chip{font-size:12px; font-weight:600; color:var(--ink-700);
+  background:var(--ink-100); border:1px solid var(--ink-200);
+  border-radius:999px; padding:4px 11px}
+.size-row.muted .chip{background:transparent; color:var(--ink-300);
+  border-style:dashed}
+.adult-msg{margin:10px 0 0; font-size:12.5px; color:var(--burnt-600);
+  font-weight:600; background:#fdf3e6; border-radius:10px; padding:8px 12px;
+  display:none}
+.card.is-adult-only .adult-msg{display:block}
+
+.empty{display:none; text-align:center; padding:60px 20px; color:var(--ink-400)}
+
+/* Lightbox */
+.lightbox{position:fixed; inset:0; background:rgba(44,33,26,.82); display:none;
+  align-items:center; justify-content:center; z-index:50; padding:24px}
+.lightbox.open{display:flex}
+.lightbox figure{margin:0; max-width:1500px; width:100%; text-align:center}
+.lightbox img{width:100%; height:auto; max-height:76vh; object-fit:contain;
+  background:var(--paper); border-radius:var(--radius-md); padding:12px}
+.lightbox figcaption{color:#fff; margin-top:16px; font-size:15px; font-weight:500}
+.lightbox figcaption span{color:#cfc4b6; font-weight:400}
+.lb-close{position:absolute; top:18px; right:22px; width:44px; height:44px;
+  border-radius:50%; border:none; background:rgba(255,255,255,.14); color:#fff;
+  font-size:22px; line-height:1; cursor:pointer}
+.lb-close:hover{background:rgba(255,255,255,.26)}
+.lb-nav{position:absolute; top:50%; transform:translateY(-50%); width:52px;
+  height:52px; border-radius:50%; border:none; background:rgba(255,255,255,.14);
+  color:#fff; font-size:24px; cursor:pointer}
+.lb-nav:hover{background:rgba(255,255,255,.26)}
+.lb-prev{left:18px} .lb-next{right:18px}
+
+footer{border-top:1px solid var(--ink-200); padding:26px 0 44px; font-size:13px;
+  color:var(--ink-400); text-align:center}
+footer .kanji{color:var(--gold-600); font-size:16px; margin-bottom:6px}
+
+@media print{
+  .swatches,.zoom,.lightbox,.toolbar{display:none!important}
+  .card{break-inside:avoid; box-shadow:none; border:1px solid var(--ink-200)}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-text">
+      <span class="eyebrow">__EYEBROW__</span>
+      <h1>__TITLE__</h1>
+      <p>Tap a colour dot to preview any design, and click a garment to enlarge it.
+         Each image shows the front and the back.</p>
+    </div>
+    <img class="logo" src="__LOGO__" alt="Stafford Shotokan Karate club logo">
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="toolbar-inner">
+    <ul class="filters" id="filters" role="group" aria-label="Filter by product type"></ul>
+    <p class="result-count" id="resultCount" aria-live="polite"></p>
+  </div>
+</div>
+
+<main class="wrap">
+  <p class="note">
+    <span class="dots" aria-hidden="true">__ADULT_DOTS__</span>
+    <span><strong>__ADULT_NAMES__ __ADULT_VERB__ available in adult sizes only.</strong>
+      Every other colour comes in both kids' and adult sizes.</span>
+  </p>
+
+  <noscript>
+    <p class="note" style="background:#f3ece1;border-color:#c9bdb0;color:#4a3b30">
+      This page needs JavaScript to show the designs and colour options.
+      Please enable it, or contact the club for a printed copy of the range.
+    </p>
+  </noscript>
+
+  <div class="grid" id="grid"></div>
+  <p class="empty" id="empty">Nothing to show for that filter.</p>
+</main>
+
+<footer>
+  <div class="kanji">空手道</div>
+  Stafford Shotokan Karate · 2026 clothing range
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged garment image">
+  <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous colour">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next colour">&#8250;</button>
+  <figure>
+    <img id="lbImg" alt="">
+    <figcaption id="lbCap" aria-live="polite"></figcaption>
+  </figure>
+</div>
+
+<script>
+const PRODUCTS = __DATA__;
+const KIDS  = __KIDS__;
+const ADULT = __ADULT__;
+
+const TYPES = [...new Set(PRODUCTS.map(p => p.type))];
+const grid = document.getElementById("grid");
+const emptyMsg = document.getElementById("empty");
+const resultCount = document.getElementById("resultCount");
+
+const src = (p, colour) =>
+  p.path.split("/").map(encodeURIComponent).join("/") + "/" +
+  encodeURIComponent(colour.file) + ".png";
+
+const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+/* ---------- Filters ---------- */
+const filters = document.getElementById("filters");
+[["all", "All"], ...TYPES.map(t => [t, t])].forEach(([value, label]) => {
+  const n = value === "all" ? PRODUCTS.length
+                            : PRODUCTS.filter(p => p.type === value).length;
+  const li = document.createElement("li");
+  const b = document.createElement("button");
+  b.className = "filter";
+  b.type = "button";
+  b.innerHTML = `${label}<span class="count"> ${n}</span>`;
+  b.setAttribute("aria-pressed", value === "all" ? "true" : "false");
+  b.addEventListener("click", () => setFilter(value));
+  li.appendChild(b);
+  filters.appendChild(li);
+});
+
+function setFilter(value){
+  [...filters.querySelectorAll(".filter")].forEach((b, i) => {
+    const v = i === 0 ? "all" : TYPES[i - 1];
+    b.setAttribute("aria-pressed", v === value ? "true" : "false");
+  });
+  let shown = 0;
+  [...grid.children].forEach(card => {
+    const match = value === "all" || card.dataset.type === value;
+    card.hidden = !match;
+    if (match) shown++;
+  });
+  emptyMsg.style.display = shown ? "none" : "block";
+  resultCount.textContent =
+    `${shown} design${shown === 1 ? "" : "s"}` +
+    (value === "all" ? "" : ` · ${value}`);
+}
+
+/* ---------- Cards ---------- */
+PRODUCTS.forEach((p, pi) => {
+  const card = document.createElement("article");
+  card.className = "card";
+  card.dataset.index = pi;
+  card.dataset.type = p.type;
+  card.innerHTML = `
+    <div class="card-head">
+      <p class="card-kicker">
+        <span class="pill ${slug(p.type)}">${p.type}</span>
+        ${p.n ? `<span class="card-num">Design ${p.n}</span>` : ""}
+      </p>
+      <h2 class="card-title">${p.title}</h2>
+    </div>
+    <div class="shot" role="button" tabindex="0" aria-label="Enlarge ${p.title}">
+      <img alt="" width="${p.w}" height="${p.h}" loading="lazy" decoding="async">
+      <span class="zoom">Click to enlarge</span>
+    </div>
+    <p class="views">Front &nbsp;·&nbsp; Back</p>
+    <div class="card-body">
+      <div>
+        <p class="swatch-label">Colour <b class="cname"></b></p>
+        <ul class="swatches"></ul>
+      </div>
+      <div class="sizes">
+        <div class="size-row kids">
+          <span class="size-key">Kids</span>
+          ${KIDS.map(s => `<span class="chip">${s}</span>`).join("")}
+        </div>
+        <div class="size-row">
+          <span class="size-key">Adult</span>
+          ${ADULT.map(s => `<span class="chip">${s}</span>`).join("")}
+        </div>
+        <p class="adult-msg"></p>
+      </div>
+    </div>`;
+
+  const list = card.querySelector(".swatches");
+  p.colours.forEach((colour, ci) => {
+    const li = document.createElement("li");
+    const b = document.createElement("button");
+    b.className = "swatch" + (colour.adultOnly ? " adult-only" : "");
+    b.style.background = colour.hex;
+    b.type = "button";
+    b.title = colour.name + (colour.adultOnly ? " (adult sizes only)" : "");
+    b.setAttribute("aria-label", b.title);
+    b.setAttribute("aria-pressed", ci === 0 ? "true" : "false");
+    b.addEventListener("click", () => select(card, pi, ci));
+    li.appendChild(b);
+    list.appendChild(li);
+  });
+
+  grid.appendChild(card);
+  select(card, pi, 0);
+});
+
+function select(card, pi, ci){
+  const p = PRODUCTS[pi];
+  const colour = p.colours[ci];
+  card.dataset.colour = ci;
+  const shot = card.querySelector(".shot");
+  const img = card.querySelector(".shot img");
+  shot.classList.add("loading");
+  img.onload = () => shot.classList.remove("loading");
+  img.onerror = () => shot.classList.remove("loading");
+  img.src = src(p, colour);
+  img.alt = `${p.title} ${p.type.toLowerCase()} in ${colour.name} — front and back`;
+  shot.setAttribute("aria-label", `Enlarge ${p.title} in ${colour.name}`);
+  card.querySelector(".cname").textContent = colour.name;
+  card.querySelectorAll(".swatch").forEach((b, i) =>
+    b.setAttribute("aria-pressed", i === ci ? "true" : "false"));
+  card.classList.toggle("is-adult-only", colour.adultOnly);
+  card.querySelector(".size-row.kids").classList.toggle("muted", colour.adultOnly);
+  card.querySelector(".adult-msg").textContent =
+    `${colour.name} is available in adult sizes only.`;
+}
+
+/* ---------- Lightbox ---------- */
+const lb = document.getElementById("lightbox");
+const lbImg = document.getElementById("lbImg");
+const lbCap = document.getElementById("lbCap");
+let lbProduct = 0, lbColour = 0, lbOpener = null;
+const regions = () => [document.querySelector("header"),
+                       document.querySelector(".toolbar"),
+                       document.querySelector("main"),
+                       document.querySelector("footer")];
+
+function openLb(pi, ci, opener){
+  lbProduct = pi; lbColour = ci; lbOpener = opener || null;
+  paintLb(); lb.classList.add("open");
+  document.body.style.overflow = "hidden";
+  regions().forEach(el => el && el.setAttribute("inert", ""));
+  document.getElementById("lbClose").focus();
+}
+function paintLb(){
+  const p = PRODUCTS[lbProduct], c = p.colours[lbColour];
+  lbImg.src = src(p, c);
+  lbImg.alt = `${p.title} ${p.type.toLowerCase()} in ${c.name} — front and back`;
+  lbCap.innerHTML =
+    `<strong>${p.type} · ${p.n ? "Design " + p.n + " · " : ""}${p.title}</strong>` +
+    ` &nbsp;<span>${c.name}${c.adultOnly ? " — adult sizes only" : ""}</span>`;
+}
+function stepLb(dir){
+  const p = PRODUCTS[lbProduct];
+  lbColour = (lbColour + dir + p.colours.length) % p.colours.length;
+  paintLb();
+  select(grid.children[lbProduct], lbProduct, lbColour);
+}
+function closeLb(){
+  lb.classList.remove("open");
+  document.body.style.overflow = "";
+  regions().forEach(el => el && el.removeAttribute("inert"));
+  if (lbOpener) lbOpener.focus();
+  lbOpener = null;
+}
+
+function openFrom(shot){
+  const card = shot.closest(".card");
+  openLb(+card.dataset.index, +card.dataset.colour, shot);
+}
+grid.addEventListener("click", e => {
+  const shot = e.target.closest(".shot");
+  if (shot) openFrom(shot);
+});
+grid.addEventListener("keydown", e => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const shot = e.target.closest(".shot");
+  if (!shot) return;
+  e.preventDefault();
+  openFrom(shot);
+});
+
+document.getElementById("lbClose").addEventListener("click", closeLb);
+document.getElementById("lbPrev").addEventListener("click", () => stepLb(-1));
+document.getElementById("lbNext").addEventListener("click", () => stepLb(1));
+lb.addEventListener("click", e => { if (e.target === lb) closeLb(); });
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("open")) return;
+  if (e.key === "Escape") closeLb();
+  if (e.key === "ArrowLeft") stepLb(-1);
+  if (e.key === "ArrowRight") stepLb(1);
+});
+
+setFilter("all");
+</script>
+</body>
+</html>
+"""
+
+
+def main():
+    print("Scanning...")
+    products = scan()
+    if not products:
+        sys.exit("No product folders found.")
+
+    # Collect the adult-only colours actually present, for the banner.
+    adult = []
+    for p in products:
+        for c in p["colours"]:
+            if c["adultOnly"] and c["name"] not in [a["name"] for a in adult]:
+                adult.append(c)
+
+    dots = "".join(f'<i style="background:{c["hex"]}"></i>' for c in adult)
+    names = " and ".join(filter(None, [
+        ", ".join(c["name"] for c in adult[:-1]),
+        adult[-1]["name"] if adult else "",
+    ])) if adult else ""
+    verb = "is" if len(adult) == 1 else "are"
+
+    html = (TEMPLATE
+            .replace("__TITLE__", SITE_TITLE)
+            .replace("__EYEBROW__", EYEBROW)
+            .replace("__LOGO__", LOGO)
+            .replace("__ADULT_DOTS__", dots)
+            .replace("__ADULT_NAMES__", names)
+            .replace("__ADULT_VERB__", verb)
+            .replace("__KIDS__", json.dumps(KIDS_SIZES, ensure_ascii=False))
+            .replace("__ADULT__", json.dumps(ADULT_SIZES, ensure_ascii=False))
+            .replace("__DATA__", json.dumps(products, ensure_ascii=False, indent=2)))
+
+    with open(OUT, "w", encoding="utf-8", newline="\n") as f:
+        f.write(html)
+
+    by_type = {}
+    for p in products:
+        by_type.setdefault(p["type"], []).append(p)
+    print(f"\nWrote {os.path.relpath(OUT, HERE)}")
+    for t, items in by_type.items():
+        print(f"  {t}: {len(items)} designs, "
+              f"{sum(len(i['colours']) for i in items)} images")
+
+
+if __name__ == "__main__":
+    main()
