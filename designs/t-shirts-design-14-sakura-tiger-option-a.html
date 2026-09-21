@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sakura Tiger (Option A) — T-Shirts — Stafford Shotokan Karate</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink-900:#070402; --ink-800:#1c140f; --ink-700:#2c211a; --ink-600:#4a3b30;
+  --ink-500:#6f5d4f; --ink-400:#9b8c7e; --ink-300:#c9bdb0; --ink-200:#e6ddd0;
+  --ink-100:#f3ece1; --paper:#fbf7ef; --gi-white:#ffffff;
+  --green-700:#3c6e14; --green-600:#4f8f1a; --green-200:#d7e9c2;
+  --gold-600:#bf9c05; --burnt-600:#823d0e;
+  --radius-md:14px; --radius-lg:22px;
+  --shadow-sm:0 1px 3px rgba(44,33,26,.10);
+  --shadow-md:0 6px 20px rgba(44,33,26,.12);
+  --shadow-lg:0 18px 46px rgba(44,33,26,.22);
+  --ease-out:cubic-bezier(.2,.7,.3,1);
+  --font:"Noto Sans","Segoe UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+html{scrollbar-gutter:stable}
+body{font-family:var(--font); color:var(--ink-600); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.5}
+img{display:block;max-width:100%}
+
+/* Header */
+.site-header{background:var(--ink-900); color:var(--gi-white);
+  padding:26px 0 30px; border-bottom:4px solid var(--gold-600)}
+.header-inner{max-width:1280px; margin:0 auto; padding:0 24px;
+  display:flex; align-items:center; justify-content:space-between; gap:24px}
+.header-text h1{font-size:clamp(24px,3.6vw,40px); font-weight:600;
+  letter-spacing:-.01em; margin:0; color:var(--gi-white); line-height:1.12}
+.header-text p{margin:10px 0 0; color:#cfc4b6; font-size:15px; max-width:56ch}
+.header-text .eyebrow{display:block; font-size:11px; letter-spacing:.18em;
+  text-transform:uppercase; font-weight:600; color:var(--gold-600); margin:0 0 8px}
+.logo{width:clamp(78px,11vw,120px); height:auto; flex:none}
+.back{display:inline-flex; align-items:center; gap:7px; margin:0 0 10px;
+  color:#cfc4b6; text-decoration:none; font-size:13px; font-weight:600;
+  letter-spacing:.04em}
+.back:hover{color:#fff; text-decoration:underline}
+
+.wrap{max-width:1280px; margin:0 auto; padding:0 24px}
+
+/* Buttons */
+.btn{font:inherit; font-size:13px; font-weight:600; cursor:pointer;
+  border:1px solid var(--ink-300); background:var(--gi-white); color:var(--ink-700);
+  border-radius:999px; padding:8px 16px; box-shadow:var(--shadow-sm);
+  text-decoration:none; display:inline-flex; align-items:center; gap:7px;
+  transition:transform .16s var(--ease-out), background .16s var(--ease-out),
+             border-color .16s var(--ease-out)}
+.btn:hover{transform:translateY(-1px); background:var(--ink-100)}
+.btn:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
+.btn.primary{background:var(--green-600); border-color:var(--green-700); color:#fff}
+.btn.primary:hover{background:var(--green-700)}
+.btn-enlarge{position:absolute; right:22px; bottom:22px; z-index:2;
+  background:rgba(7,4,2,.78); border-color:rgba(255,255,255,.28); color:#fff;
+  font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:7px 14px;
+  backdrop-filter:blur(2px)}
+.btn-enlarge:hover{background:rgba(7,4,2,.92); color:#fff}
+
+/* Filter bar */
+.toolbar{position:sticky; top:0; z-index:20; background:rgba(251,247,239,.94);
+  backdrop-filter:blur(6px); border-bottom:1px solid var(--ink-200);
+  margin-bottom:26px}
+.toolbar-inner{max-width:1280px; margin:0 auto; padding:14px 24px;
+  display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+  justify-content:space-between}
+.filters{display:flex; gap:8px; flex-wrap:wrap; margin:0; padding:0; list-style:none}
+.filter{font:inherit; font-size:14px; font-weight:600; cursor:pointer;
+  border:1px solid var(--ink-300); background:var(--gi-white); color:var(--ink-700);
+  border-radius:999px; padding:9px 18px; box-shadow:var(--shadow-sm);
+  transition:transform .16s var(--ease-out), background .16s var(--ease-out)}
+.filter:hover{transform:translateY(-1px)}
+.filter:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
+.filter[aria-pressed="true"]{background:var(--green-600);
+  border-color:var(--green-700); color:#fff}
+.filter .count{opacity:.65; font-weight:500}
+.result-count{font-size:13px; color:var(--ink-400); margin:0}
+
+.note{display:flex; align-items:flex-start; gap:10px; margin:0 0 24px;
+  background:#fdf3e6; border:1px solid #edd6b4; color:var(--burnt-600);
+  border-radius:var(--radius-md); padding:12px 16px; font-size:14px; font-weight:500}
+.note strong{color:var(--ink-800)}
+.note .dots{display:flex; gap:4px; flex:none; margin-top:3px}
+.note .dots i{width:14px;height:14px;border-radius:50%;display:block;
+  box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(0,0,0,.12)}
+
+/* Grid */
+.grid{display:grid; gap:26px; margin:0 0 60px;
+  grid-template-columns:repeat(auto-fill,minmax(420px,1fr))}
+@media (max-width:900px){ .grid{grid-template-columns:1fr} }
+
+.card{background:var(--gi-white); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md); overflow:hidden; display:flex; flex-direction:column;
+  transition:box-shadow .25s var(--ease-out), transform .25s var(--ease-out)}
+.card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)}
+.card[hidden]{display:none}
+
+.card-head{padding:16px 22px 12px; border-bottom:1px solid var(--ink-200)}
+.card-kicker{display:flex; align-items:center; gap:10px; margin:0 0 4px}
+.pill{font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+  border-radius:999px; padding:3px 10px; background:var(--green-200);
+  color:var(--green-700)}
+.pill.hoodies{background:#e2e0ef; color:#3b357a}
+.card-num{font-size:11px; font-weight:700; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--ink-400)}
+.card-title{margin:0; font-size:19px; font-weight:600; color:var(--ink-900);
+  line-height:1.25}
+
+.shot{position:relative; background:var(--ink-100); padding:14px}
+.shot img{width:100%; height:auto; border-radius:10px;
+  transition:opacity .18s var(--ease-out)}
+.shot.loading img{opacity:.25}
+.views{margin:0; font-size:11px; color:var(--ink-400); text-align:center;
+  letter-spacing:.14em; text-transform:uppercase; font-weight:600;
+  padding:0 0 12px; background:var(--ink-100)}
+
+.card-body{padding:16px 22px 22px; display:flex; flex-direction:column;
+  gap:14px; flex:1}
+.swatch-label{margin:0 0 8px; font-size:11px; letter-spacing:.14em;
+  text-transform:uppercase; font-weight:600; color:var(--ink-400)}
+.swatch-label b{color:var(--ink-800); font-weight:600; letter-spacing:0;
+  text-transform:none; font-size:14px; margin-left:8px}
+.swatches{display:flex; flex-wrap:wrap; gap:9px; padding:0; margin:0; list-style:none}
+.swatch{width:34px; height:34px; border-radius:50%; padding:0; cursor:pointer;
+  border:1px solid var(--ink-300); background-clip:padding-box;
+  box-shadow:var(--shadow-sm); position:relative;
+  transition:transform .16s var(--ease-out), box-shadow .16s var(--ease-out)}
+.swatch:hover{transform:translateY(-2px)}
+.swatch:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
+.swatch[aria-pressed="true"]{box-shadow:0 0 0 2px var(--gi-white),
+  0 0 0 4px var(--green-600), var(--shadow-sm)}
+.swatch.adult-only::after{content:"A"; position:absolute; right:-3px; bottom:-3px;
+  width:15px; height:15px; border-radius:50%; background:var(--ink-900); color:#fff;
+  font-size:9px; font-weight:700; display:grid; place-items:center;
+  border:1.5px solid #fff}
+
+.sizes{border-top:1px solid var(--ink-200); padding-top:14px}
+.size-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
+.size-row:last-of-type{margin-bottom:0}
+.size-key{font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+  font-weight:700; color:var(--ink-400); width:52px; flex:none}
+.chip{font-size:12px; font-weight:600; color:var(--ink-700);
+  background:var(--ink-100); border:1px solid var(--ink-200);
+  border-radius:999px; padding:4px 11px}
+.size-row.muted .chip{background:transparent; color:var(--ink-300);
+  border-style:dashed}
+.adult-msg{margin:10px 0 0; font-size:12.5px; color:var(--burnt-600);
+  font-weight:600; background:#fdf3e6; border-radius:10px; padding:8px 12px;
+  display:none}
+.card.is-adult-only .adult-msg{display:block}
+
+.card-foot{margin-top:auto; padding-top:14px; border-top:1px solid var(--ink-200);
+  display:flex; justify-content:flex-end}
+
+.empty{display:none; text-align:center; padding:60px 20px; color:var(--ink-400)}
+
+/* Design page */
+.design-intro{display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;
+  justify-content:space-between; margin:28px 0 24px}
+.design-intro .sizes{border-top:none; padding-top:0; flex:1 1 320px}
+.colour-grid{display:grid; gap:26px; margin:0 0 60px;
+  grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}
+@media (max-width:860px){ .colour-grid{grid-template-columns:1fr} }
+.colour-card{background:var(--gi-white); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md); overflow:hidden;
+  transition:box-shadow .25s var(--ease-out), transform .25s var(--ease-out)}
+.colour-card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)}
+.colour-bar{display:flex; align-items:center; gap:11px; padding:14px 20px;
+  border-bottom:1px solid var(--ink-200)}
+.colour-bar .dot{width:26px; height:26px; border-radius:50%; flex:none;
+  border:1px solid var(--ink-300); box-shadow:var(--shadow-sm)}
+.colour-bar h2{margin:0; font-size:16px; font-weight:600; color:var(--ink-900)}
+.colour-bar .tag{margin-left:auto; font-size:10px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; border-radius:999px;
+  padding:3px 10px; background:#fdf3e6; color:var(--burnt-600);
+  border:1px solid #edd6b4}
+
+/* Lightbox */
+.lightbox{position:fixed; inset:0; background:rgba(44,33,26,.82); display:none;
+  align-items:center; justify-content:center; z-index:50; padding:24px}
+.lightbox.open{display:flex}
+.lightbox figure{margin:0; max-width:1500px; width:100%; text-align:center}
+.lightbox img{width:100%; height:auto; max-height:76vh; object-fit:contain;
+  background:var(--paper); border-radius:var(--radius-md); padding:12px}
+.lightbox figcaption{color:#fff; margin-top:16px; font-size:15px; font-weight:500}
+.lightbox figcaption span{color:#cfc4b6; font-weight:400}
+.lb-close,.lb-nav{font:inherit; border:1px solid rgba(255,255,255,.34);
+  background:rgba(7,4,2,.78); color:#fff; cursor:pointer; position:absolute;
+  display:grid; place-items:center; line-height:1;
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+  transition:background .16s var(--ease-out), transform .16s var(--ease-out)}
+.lb-close:hover,.lb-nav:hover{background:rgba(7,4,2,.95)}
+.lb-close:focus-visible,.lb-nav:focus-visible{outline:3px solid var(--gold-600);
+  outline-offset:3px}
+.lb-close{top:18px; right:22px; width:44px; height:44px; border-radius:50%;
+  font-size:22px}
+.lb-nav{top:50%; margin-top:-28px; width:56px; height:56px; border-radius:50%;
+  font-size:26px; font-weight:700}
+.lb-nav:hover{transform:scale(1.06)}
+.lb-prev{left:18px} .lb-next{right:18px}
+@media (max-width:640px){
+  .lb-nav{width:46px; height:46px; margin-top:-23px; font-size:22px}
+  .lb-prev{left:8px} .lb-next{right:8px}
+}
+
+footer{border-top:1px solid var(--ink-200); padding:26px 0 44px; font-size:13px;
+  color:var(--ink-400); text-align:center}
+footer .kanji{color:var(--gold-600); font-size:16px; margin-bottom:6px}
+
+@media print{
+  .swatches,.lightbox,.toolbar,.btn,.card-foot{display:none!important}
+  .card,.colour-card{break-inside:avoid; box-shadow:none;
+    border:1px solid var(--ink-200)}
+}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-text">
+      <a class="back" href="../index.html">&#8249;&nbsp; All designs</a>
+      <span class="eyebrow">T-Shirts · Design 14</span>
+      <h1>Sakura Tiger (Option A)</h1>
+      <p>9 colours, front and back. Click any image to enlarge it,
+         then use the arrows to move between colours.</p>
+    </div>
+    <img class="logo" src="../ssk-logo-white-300dpi.png" alt="Stafford Shotokan Karate club logo">
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="design-intro">
+    <div class="sizes">
+      <div class="size-row kids"><span class="size-key">Kids</span><span class="chip">3–4 yrs</span><span class="chip">5–6 yrs</span><span class="chip">7–8 yrs</span><span class="chip">9–11 yrs</span><span class="chip">12–13 yrs</span></div><div class="size-row"><span class="size-key">Adult</span><span class="chip">S</span><span class="chip">M</span><span class="chip">L</span><span class="chip">XL</span><span class="chip">2XL</span></div>
+    </div>
+    <a class="btn" href="../index.html">&#8249;&nbsp; Back to all designs</a>
+  </div>
+
+  <p class="note" id="adultNote"><span class="dots" aria-hidden="true"><i style="background:#ec8414"></i><i style="background:#641868"></i></span><span><strong>Orange Crush and Purple are available in adult sizes only.</strong> Every other colour comes in both kids' and adult sizes.</span></p>
+
+  <div class="colour-grid">
+    
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#fcfcfc" aria-hidden="true"></span>
+        <h2>Arctic White</h2>
+        
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Arctic_White.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Arctic White — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="0"
+                aria-label="Click to enlarge Arctic White">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#c0b8b4" aria-hidden="true"></span>
+        <h2>Natural Stone</h2>
+        
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Natural_Stone.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Natural Stone — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="1"
+                aria-label="Click to enlarge Natural Stone">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#3c6484" aria-hidden="true"></span>
+        <h2>Airforce Blue</h2>
+        
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Airforce_Blue.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Airforce Blue — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="2"
+                aria-label="Click to enlarge Airforce Blue">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#204c1c" aria-hidden="true"></span>
+        <h2>Bottle Green</h2>
+        
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Bottle_Green.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Bottle Green — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="3"
+                aria-label="Click to enlarge Bottle Green">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#d40000" aria-hidden="true"></span>
+        <h2>Fire Red</h2>
+        
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Fire_Red.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Fire Red — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="4"
+                aria-label="Click to enlarge Fire Red">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#ec8414" aria-hidden="true"></span>
+        <h2>Orange Crush</h2>
+        <span class="tag">Adult sizes only</span>
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Orange_Crush.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Orange Crush — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="5"
+                aria-label="Click to enlarge Orange Crush">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#641868" aria-hidden="true"></span>
+        <h2>Purple</h2>
+        <span class="tag">Adult sizes only</span>
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Purple.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Purple — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="6"
+                aria-label="Click to enlarge Purple">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#2c2c28" aria-hidden="true"></span>
+        <h2>Solid Charcoal</h2>
+        
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Solid_Charcoal.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Solid Charcoal — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="7"
+                aria-label="Click to enlarge Solid Charcoal">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:#000000" aria-hidden="true"></span>
+        <h2>Deep Black</h2>
+        
+      </div>
+      <div class="shot">
+        <img src="../T-Shirts/Design%2014%20-%20Sakura%20Tiger%20%28Option%20A%29/Deep_Black.png" width="3293" height="1725"
+             loading="lazy" decoding="async"
+             alt="Sakura Tiger (Option A) t-shirts in Deep Black — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="8"
+                aria-label="Click to enlarge Deep Black">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>
+  </div>
+</main>
+
+<footer>
+  <div class="kanji">空手道</div>
+  Stafford Shotokan Karate · 2026 clothing range
+</footer>
+
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true"
+     aria-label="Enlarged garment image">
+  <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous colour">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next colour">&#8250;</button>
+  <figure>
+    <img id="lbImg" alt="">
+    <figcaption id="lbCap" aria-live="polite"></figcaption>
+  </figure>
+</div>
+
+<script>
+const DESIGN = {
+  "type": "T-Shirts",
+  "n": 14,
+  "folder": "Design 14 - Sakura Tiger (Option A)",
+  "title": "Sakura Tiger (Option A)",
+  "path": "T-Shirts/Design 14 - Sakura Tiger (Option A)",
+  "slug": "t-shirts-design-14-sakura-tiger-option-a",
+  "w": 3293,
+  "h": 1725,
+  "colours": [
+    {
+      "file": "Arctic_White",
+      "name": "Arctic White",
+      "hex": "#fcfcfc",
+      "adultOnly": false
+    },
+    {
+      "file": "Natural_Stone",
+      "name": "Natural Stone",
+      "hex": "#c0b8b4",
+      "adultOnly": false
+    },
+    {
+      "file": "Airforce_Blue",
+      "name": "Airforce Blue",
+      "hex": "#3c6484",
+      "adultOnly": false
+    },
+    {
+      "file": "Bottle_Green",
+      "name": "Bottle Green",
+      "hex": "#204c1c",
+      "adultOnly": false
+    },
+    {
+      "file": "Fire_Red",
+      "name": "Fire Red",
+      "hex": "#d40000",
+      "adultOnly": false
+    },
+    {
+      "file": "Orange_Crush",
+      "name": "Orange Crush",
+      "hex": "#ec8414",
+      "adultOnly": true
+    },
+    {
+      "file": "Purple",
+      "name": "Purple",
+      "hex": "#641868",
+      "adultOnly": true
+    },
+    {
+      "file": "Solid_Charcoal",
+      "name": "Solid Charcoal",
+      "hex": "#2c2c28",
+      "adultOnly": false
+    },
+    {
+      "file": "Deep_Black",
+      "name": "Deep Black",
+      "hex": "#000000",
+      "adultOnly": false
+    }
+  ]
+};
+
+const src = c =>
+  "../" + DESIGN.path.split("/").map(encodeURIComponent).join("/") + "/" +
+  encodeURIComponent(c.file) + ".png";
+
+document.querySelectorAll(".btn-enlarge").forEach(btn => {
+  btn.addEventListener("click", () => openLb(0, +btn.dataset.colour, btn));
+});
+
+const lbColoursFor = () => DESIGN.colours;
+const onLbStep = () => {};
+function paintLb(){
+  const c = DESIGN.colours[lbColour];
+  lbImg.src = src(c);
+  lbImg.alt = `${DESIGN.title} ${DESIGN.type.toLowerCase()} in ${c.name} — front and back`;
+  lbCap.innerHTML =
+    `<strong>${DESIGN.type} · ${DESIGN.n ? "Design " + DESIGN.n + " · " : ""}${DESIGN.title}</strong>` +
+    ` &nbsp;<span>${c.name}${c.adultOnly ? " — adult sizes only" : ""}</span>`;
+}
+
+const lb = document.getElementById("lightbox");
+const lbImg = document.getElementById("lbImg");
+const lbCap = document.getElementById("lbCap");
+let lbItem = 0, lbColour = 0, lbOpener = null;
+
+const outside = () => [...document.body.children]
+  .filter(el => el !== lb && el.tagName !== "SCRIPT");
+
+function openLb(item, ci, opener){
+  lbItem = item; lbColour = ci; lbOpener = opener || null;
+  paintLb(); lb.classList.add("open");
+  document.body.style.overflow = "hidden";
+  outside().forEach(el => el.setAttribute("inert", ""));
+  document.getElementById("lbClose").focus();
+}
+function closeLb(){
+  lb.classList.remove("open");
+  document.body.style.overflow = "";
+  outside().forEach(el => el.removeAttribute("inert"));
+  if (lbOpener) lbOpener.focus();
+  lbOpener = null;
+}
+function stepLb(dir){
+  const list = lbColoursFor(lbItem);
+  lbColour = (lbColour + dir + list.length) % list.length;
+  paintLb();
+  onLbStep(lbItem, lbColour);
+}
+document.getElementById("lbClose").addEventListener("click", closeLb);
+document.getElementById("lbPrev").addEventListener("click", () => stepLb(-1));
+document.getElementById("lbNext").addEventListener("click", () => stepLb(1));
+lb.addEventListener("click", e => { if (e.target === lb) closeLb(); });
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("open")) return;
+  if (e.key === "Escape") closeLb();
+  if (e.key === "ArrowLeft") stepLb(-1);
+  if (e.key === "ArrowRight") stepLb(1);
+});
+
+</script>
+</body>
+</html>

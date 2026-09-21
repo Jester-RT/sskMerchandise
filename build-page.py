@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """
-Rebuilds index.html for the SSK clothing store page.
+Rebuilds the SSK clothing store pages.
 
 Scans the folder structure:
 
     <Product Type>/<Design Name>/<Colour>.png
 
-...and regenerates index.html with the designs, colours and swatch colours it
-finds. Swatch colours are sampled from the garment itself, so they always match
-the real product.
+...and regenerates:
+
+    index.html              the store front, filterable by product type
+    designs/<slug>.html     one page per design, showing every colour
+
+Swatch colours are sampled from the garment itself, so they always match the
+real product.
 
 Usage (from this folder):   python build-page.py
 
@@ -28,6 +32,7 @@ except ImportError:
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "index.html")
+DESIGN_DIR = os.path.join(HERE, "designs")
 
 SITE_TITLE = "Stafford Shotokan Karate Club Clothing"
 EYEBROW = "2026 Range"
@@ -52,6 +57,10 @@ COLOUR_ORDER = [
 ]
 
 
+# --------------------------------------------------------------------------
+# Scanning
+# --------------------------------------------------------------------------
+
 def natural_key(s):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", s)]
 
@@ -64,6 +73,10 @@ def ordered(items, preferred):
 
 def pretty(stem):
     return stem.replace("_", " ")
+
+
+def slugify(s):
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", s.lower())).strip("-")
 
 
 def design_title(folder):
@@ -96,7 +109,8 @@ def garment_hex(path):
 def scan():
     types = [d for d in os.listdir(HERE)
              if os.path.isdir(os.path.join(HERE, d))
-             and not d.startswith(".")]
+             and not d.startswith(".")
+             and d != "designs"]
     swatch_cache = {}
     products = []
 
@@ -130,6 +144,7 @@ def scan():
                 "folder": folder,
                 "title": title,
                 "path": f"{ptype}/{folder}",
+                "slug": slugify(f"{ptype}-{folder}"),
                 "w": iw,
                 "h": ih,
                 "colours": colours,
@@ -137,16 +152,11 @@ def scan():
     return products
 
 
-TEMPLATE = r"""<!DOCTYPE html>
-<html lang="en-GB">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>__TITLE__</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
+# --------------------------------------------------------------------------
+# Shared CSS
+# --------------------------------------------------------------------------
+
+CSS = r"""
 :root{
   --ink-900:#070402; --ink-800:#1c140f; --ink-700:#2c211a; --ink-600:#4a3b30;
   --ink-500:#6f5d4f; --ink-400:#9b8c7e; --ink-300:#c9bdb0; --ink-200:#e6ddd0;
@@ -162,6 +172,7 @@ TEMPLATE = r"""<!DOCTYPE html>
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
+html{scrollbar-gutter:stable}
 body{font-family:var(--font); color:var(--ink-600); background:var(--paper);
   -webkit-font-smoothing:antialiased; line-height:1.5}
 img{display:block;max-width:100%}
@@ -177,8 +188,29 @@ img{display:block;max-width:100%}
 .header-text .eyebrow{display:block; font-size:11px; letter-spacing:.18em;
   text-transform:uppercase; font-weight:600; color:var(--gold-600); margin:0 0 8px}
 .logo{width:clamp(78px,11vw,120px); height:auto; flex:none}
+.back{display:inline-flex; align-items:center; gap:7px; margin:0 0 10px;
+  color:#cfc4b6; text-decoration:none; font-size:13px; font-weight:600;
+  letter-spacing:.04em}
+.back:hover{color:#fff; text-decoration:underline}
 
 .wrap{max-width:1280px; margin:0 auto; padding:0 24px}
+
+/* Buttons */
+.btn{font:inherit; font-size:13px; font-weight:600; cursor:pointer;
+  border:1px solid var(--ink-300); background:var(--gi-white); color:var(--ink-700);
+  border-radius:999px; padding:8px 16px; box-shadow:var(--shadow-sm);
+  text-decoration:none; display:inline-flex; align-items:center; gap:7px;
+  transition:transform .16s var(--ease-out), background .16s var(--ease-out),
+             border-color .16s var(--ease-out)}
+.btn:hover{transform:translateY(-1px); background:var(--ink-100)}
+.btn:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
+.btn.primary{background:var(--green-600); border-color:var(--green-700); color:#fff}
+.btn.primary:hover{background:var(--green-700)}
+.btn-enlarge{position:absolute; right:22px; bottom:22px; z-index:2;
+  background:rgba(7,4,2,.78); border-color:rgba(255,255,255,.28); color:#fff;
+  font-size:11px; letter-spacing:.06em; text-transform:uppercase; padding:7px 14px;
+  backdrop-filter:blur(2px)}
+.btn-enlarge:hover{background:rgba(7,4,2,.92); color:#fff}
 
 /* Filter bar */
 .toolbar{position:sticky; top:0; z-index:20; background:rgba(251,247,239,.94);
@@ -194,9 +226,9 @@ img{display:block;max-width:100%}
   transition:transform .16s var(--ease-out), background .16s var(--ease-out)}
 .filter:hover{transform:translateY(-1px)}
 .filter:focus-visible{outline:3px solid var(--green-600); outline-offset:3px}
-.filter[aria-pressed="true"]{background:var(--green-600); border-color:var(--green-700);
-  color:#fff}
-.filter .count{opacity:.65; font-weight:500; margin-left:6px}
+.filter[aria-pressed="true"]{background:var(--green-600);
+  border-color:var(--green-700); color:#fff}
+.filter .count{opacity:.65; font-weight:500}
 .result-count{font-size:13px; color:var(--ink-400); margin:0}
 
 .note{display:flex; align-items:flex-start; gap:10px; margin:0 0 24px;
@@ -229,16 +261,10 @@ img{display:block;max-width:100%}
 .card-title{margin:0; font-size:19px; font-weight:600; color:var(--ink-900);
   line-height:1.25}
 
-.shot{position:relative; background:var(--ink-100); padding:14px; cursor:zoom-in}
+.shot{position:relative; background:var(--ink-100); padding:14px}
 .shot img{width:100%; height:auto; border-radius:10px;
   transition:opacity .18s var(--ease-out)}
 .shot.loading img{opacity:.25}
-.shot .zoom{position:absolute; right:22px; bottom:22px; background:rgba(7,4,2,.62);
-  color:#fff; border-radius:999px; font-size:11px; font-weight:600;
-  letter-spacing:.06em; text-transform:uppercase; padding:6px 12px; opacity:0;
-  transition:opacity .2s var(--ease-out); pointer-events:none}
-.shot:hover .zoom{opacity:1}
-@media (hover:none){ .shot .zoom{opacity:.85} }
 .views{margin:0; font-size:11px; color:var(--ink-400); text-align:center;
   letter-spacing:.14em; text-transform:uppercase; font-weight:600;
   padding:0 0 12px; background:var(--ink-100)}
@@ -263,7 +289,7 @@ img{display:block;max-width:100%}
   font-size:9px; font-weight:700; display:grid; place-items:center;
   border:1.5px solid #fff}
 
-.sizes{border-top:1px solid var(--ink-200); padding-top:14px; margin-top:auto}
+.sizes{border-top:1px solid var(--ink-200); padding-top:14px}
 .size-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px}
 .size-row:last-of-type{margin-bottom:0}
 .size-key{font-size:11px; letter-spacing:.12em; text-transform:uppercase;
@@ -278,7 +304,31 @@ img{display:block;max-width:100%}
   display:none}
 .card.is-adult-only .adult-msg{display:block}
 
+.card-foot{margin-top:auto; padding-top:14px; border-top:1px solid var(--ink-200);
+  display:flex; justify-content:flex-end}
+
 .empty{display:none; text-align:center; padding:60px 20px; color:var(--ink-400)}
+
+/* Design page */
+.design-intro{display:flex; flex-wrap:wrap; gap:24px; align-items:flex-start;
+  justify-content:space-between; margin:28px 0 24px}
+.design-intro .sizes{border-top:none; padding-top:0; flex:1 1 320px}
+.colour-grid{display:grid; gap:26px; margin:0 0 60px;
+  grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}
+@media (max-width:860px){ .colour-grid{grid-template-columns:1fr} }
+.colour-card{background:var(--gi-white); border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-md); overflow:hidden;
+  transition:box-shadow .25s var(--ease-out), transform .25s var(--ease-out)}
+.colour-card:hover{box-shadow:var(--shadow-lg); transform:translateY(-2px)}
+.colour-bar{display:flex; align-items:center; gap:11px; padding:14px 20px;
+  border-bottom:1px solid var(--ink-200)}
+.colour-bar .dot{width:26px; height:26px; border-radius:50%; flex:none;
+  border:1px solid var(--ink-300); box-shadow:var(--shadow-sm)}
+.colour-bar h2{margin:0; font-size:16px; font-weight:600; color:var(--ink-900)}
+.colour-bar .tag{margin-left:auto; font-size:10px; font-weight:700;
+  letter-spacing:.1em; text-transform:uppercase; border-radius:999px;
+  padding:3px 10px; background:#fdf3e6; color:var(--burnt-600);
+  border:1px solid #edd6b4}
 
 /* Lightbox */
 .lightbox{position:fixed; inset:0; background:rgba(44,33,26,.82); display:none;
@@ -289,35 +339,158 @@ img{display:block;max-width:100%}
   background:var(--paper); border-radius:var(--radius-md); padding:12px}
 .lightbox figcaption{color:#fff; margin-top:16px; font-size:15px; font-weight:500}
 .lightbox figcaption span{color:#cfc4b6; font-weight:400}
-.lb-close{position:absolute; top:18px; right:22px; width:44px; height:44px;
-  border-radius:50%; border:none; background:rgba(255,255,255,.14); color:#fff;
-  font-size:22px; line-height:1; cursor:pointer}
-.lb-close:hover{background:rgba(255,255,255,.26)}
-.lb-nav{position:absolute; top:50%; transform:translateY(-50%); width:52px;
-  height:52px; border-radius:50%; border:none; background:rgba(255,255,255,.14);
-  color:#fff; font-size:24px; cursor:pointer}
-.lb-nav:hover{background:rgba(255,255,255,.26)}
+.lb-close,.lb-nav{font:inherit; border:1px solid rgba(255,255,255,.34);
+  background:rgba(7,4,2,.78); color:#fff; cursor:pointer; position:absolute;
+  display:grid; place-items:center; line-height:1;
+  box-shadow:0 4px 14px rgba(0,0,0,.4);
+  transition:background .16s var(--ease-out), transform .16s var(--ease-out)}
+.lb-close:hover,.lb-nav:hover{background:rgba(7,4,2,.95)}
+.lb-close:focus-visible,.lb-nav:focus-visible{outline:3px solid var(--gold-600);
+  outline-offset:3px}
+.lb-close{top:18px; right:22px; width:44px; height:44px; border-radius:50%;
+  font-size:22px}
+.lb-nav{top:50%; margin-top:-28px; width:56px; height:56px; border-radius:50%;
+  font-size:26px; font-weight:700}
+.lb-nav:hover{transform:scale(1.06)}
 .lb-prev{left:18px} .lb-next{right:18px}
+@media (max-width:640px){
+  .lb-nav{width:46px; height:46px; margin-top:-23px; font-size:22px}
+  .lb-prev{left:8px} .lb-next{right:8px}
+}
 
 footer{border-top:1px solid var(--ink-200); padding:26px 0 44px; font-size:13px;
   color:var(--ink-400); text-align:center}
 footer .kanji{color:var(--gold-600); font-size:16px; margin-bottom:6px}
 
 @media print{
-  .swatches,.zoom,.lightbox,.toolbar{display:none!important}
-  .card{break-inside:avoid; box-shadow:none; border:1px solid var(--ink-200)}
+  .swatches,.lightbox,.toolbar,.btn,.card-foot{display:none!important}
+  .card,.colour-card{break-inside:avoid; box-shadow:none;
+    border:1px solid var(--ink-200)}
 }
-</style>
+"""
+
+
+# Lightbox markup + behaviour, shared by both page types. The page supplies a
+# `lbColoursFor(i)` function returning the colour array for lightbox item i.
+LIGHTBOX_HTML = r"""
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true"
+     aria-label="Enlarged garment image">
+  <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous colour">&#8249;</button>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next colour">&#8250;</button>
+  <figure>
+    <img id="lbImg" alt="">
+    <figcaption id="lbCap" aria-live="polite"></figcaption>
+  </figure>
+</div>
+"""
+
+LIGHTBOX_JS = r"""
+const lb = document.getElementById("lightbox");
+const lbImg = document.getElementById("lbImg");
+const lbCap = document.getElementById("lbCap");
+let lbItem = 0, lbColour = 0, lbOpener = null;
+
+const outside = () => [...document.body.children]
+  .filter(el => el !== lb && el.tagName !== "SCRIPT");
+
+function openLb(item, ci, opener){
+  lbItem = item; lbColour = ci; lbOpener = opener || null;
+  paintLb(); lb.classList.add("open");
+  document.body.style.overflow = "hidden";
+  outside().forEach(el => el.setAttribute("inert", ""));
+  document.getElementById("lbClose").focus();
+}
+function closeLb(){
+  lb.classList.remove("open");
+  document.body.style.overflow = "";
+  outside().forEach(el => el.removeAttribute("inert"));
+  if (lbOpener) lbOpener.focus();
+  lbOpener = null;
+}
+function stepLb(dir){
+  const list = lbColoursFor(lbItem);
+  lbColour = (lbColour + dir + list.length) % list.length;
+  paintLb();
+  onLbStep(lbItem, lbColour);
+}
+document.getElementById("lbClose").addEventListener("click", closeLb);
+document.getElementById("lbPrev").addEventListener("click", () => stepLb(-1));
+document.getElementById("lbNext").addEventListener("click", () => stepLb(1));
+lb.addEventListener("click", e => { if (e.target === lb) closeLb(); });
+document.addEventListener("keydown", e => {
+  if (!lb.classList.contains("open")) return;
+  if (e.key === "Escape") closeLb();
+  if (e.key === "ArrowLeft") stepLb(-1);
+  if (e.key === "ArrowRight") stepLb(1);
+});
+"""
+
+
+def head(title, css_extra=""):
+    return f"""<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>{CSS}{css_extra}</style>
 </head>
 <body>
+"""
 
+
+FOOTER = """
+<footer>
+  <div class="kanji">空手道</div>
+  Stafford Shotokan Karate · 2026 clothing range
+</footer>
+"""
+
+
+def adult_note(colours):
+    """The 'adult sizes only' banner for a set of colours, or '' if none apply."""
+    adult = []
+    for c in colours:
+        if c["adultOnly"] and c["name"] not in [a["name"] for a in adult]:
+            adult.append(c)
+    if not adult:
+        return ""
+    dots = "".join(f'<i style="background:{c["hex"]}"></i>' for c in adult)
+    names = " and ".join(filter(None, [
+        ", ".join(c["name"] for c in adult[:-1]),
+        adult[-1]["name"],
+    ]))
+    verb = "is" if len(adult) == 1 else "are"
+    return (f'<p class="note" id="adultNote">'
+            f'<span class="dots" aria-hidden="true">{dots}</span>'
+            f'<span><strong>{esc(names)} {verb} available in adult sizes only.</strong> '
+            f"Every other colour comes in both kids' and adult sizes.</span></p>")
+
+
+def size_rows(adult_only=False):
+    kids = "".join(f'<span class="chip">{s}</span>' for s in KIDS_SIZES)
+    adult = "".join(f'<span class="chip">{s}</span>' for s in ADULT_SIZES)
+    muted = " muted" if adult_only else ""
+    return (f'<div class="size-row kids{muted}"><span class="size-key">Kids</span>{kids}</div>'
+            f'<div class="size-row"><span class="size-key">Adult</span>{adult}</div>')
+
+
+# --------------------------------------------------------------------------
+# Store front
+# --------------------------------------------------------------------------
+
+INDEX_BODY = r"""
 <header class="site-header">
   <div class="header-inner">
     <div class="header-text">
       <span class="eyebrow">__EYEBROW__</span>
       <h1>__TITLE__</h1>
-      <p>Tap a colour dot to preview any design, and click a garment to enlarge it.
-         Each image shows the front and the back.</p>
+      <p>Tap a colour dot to preview any design, or open a design to see every
+         colour side by side. Each image shows the front and the back.</p>
     </div>
     <img class="logo" src="__LOGO__" alt="Stafford Shotokan Karate club logo">
   </div>
@@ -331,11 +504,7 @@ footer .kanji{color:var(--gold-600); font-size:16px; margin-bottom:6px}
 </div>
 
 <main class="wrap">
-  <p class="note">
-    <span class="dots" aria-hidden="true">__ADULT_DOTS__</span>
-    <span><strong>__ADULT_NAMES__ __ADULT_VERB__ available in adult sizes only.</strong>
-      Every other colour comes in both kids' and adult sizes.</span>
-  </p>
+  __ADULT_NOTE__
 
   <noscript>
     <p class="note" style="background:#f3ece1;border-color:#c9bdb0;color:#4a3b30">
@@ -347,22 +516,8 @@ footer .kanji{color:var(--gold-600); font-size:16px; margin-bottom:6px}
   <div class="grid" id="grid"></div>
   <p class="empty" id="empty">Nothing to show for that filter.</p>
 </main>
-
-<footer>
-  <div class="kanji">空手道</div>
-  Stafford Shotokan Karate · 2026 clothing range
-</footer>
-
-<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Enlarged garment image">
-  <button class="lb-close" id="lbClose" aria-label="Close">&times;</button>
-  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous colour">&#8249;</button>
-  <button class="lb-nav lb-next" id="lbNext" aria-label="Next colour">&#8250;</button>
-  <figure>
-    <img id="lbImg" alt="">
-    <figcaption id="lbCap" aria-live="polite"></figcaption>
-  </figure>
-</div>
-
+__FOOTER__
+__LIGHTBOX__
 <script>
 const PRODUCTS = __DATA__;
 const KIDS  = __KIDS__;
@@ -376,8 +531,9 @@ const resultCount = document.getElementById("resultCount");
 const src = (p, colour) =>
   p.path.split("/").map(encodeURIComponent).join("/") + "/" +
   encodeURIComponent(colour.file) + ".png";
-
 const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+const h = s => String(s).replace(/[&<>"']/g, ch =>
+  ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[ch]));
 
 /* ---------- Filters ---------- */
 const filters = document.getElementById("filters");
@@ -410,6 +566,14 @@ function setFilter(value){
   resultCount.textContent =
     `${shown} design${shown === 1 ? "" : "s"}` +
     (value === "all" ? "" : ` · ${value}`);
+
+  // Only show the adult-sizes note when a visible design actually has one.
+  const note = document.getElementById("adultNote");
+  if (note){
+    const relevant = PRODUCTS.some(p =>
+      (value === "all" || p.type === value) && p.colours.some(c => c.adultOnly));
+    note.hidden = !relevant;
+  }
 }
 
 /* ---------- Cards ---------- */
@@ -421,14 +585,14 @@ PRODUCTS.forEach((p, pi) => {
   card.innerHTML = `
     <div class="card-head">
       <p class="card-kicker">
-        <span class="pill ${slug(p.type)}">${p.type}</span>
+        <span class="pill ${slug(p.type)}">${h(p.type)}</span>
         ${p.n ? `<span class="card-num">Design ${p.n}</span>` : ""}
       </p>
-      <h2 class="card-title">${p.title}</h2>
+      <h2 class="card-title">${h(p.title)}</h2>
     </div>
-    <div class="shot" role="button" tabindex="0" aria-label="Enlarge ${p.title}">
+    <div class="shot">
       <img alt="" width="${p.w}" height="${p.h}" loading="lazy" decoding="async">
-      <span class="zoom">Click to enlarge</span>
+      <button class="btn btn-enlarge" type="button">Click to Enlarge</button>
     </div>
     <p class="views">Front &nbsp;·&nbsp; Back</p>
     <div class="card-body">
@@ -437,15 +601,12 @@ PRODUCTS.forEach((p, pi) => {
         <ul class="swatches"></ul>
       </div>
       <div class="sizes">
-        <div class="size-row kids">
-          <span class="size-key">Kids</span>
-          ${KIDS.map(s => `<span class="chip">${s}</span>`).join("")}
-        </div>
-        <div class="size-row">
-          <span class="size-key">Adult</span>
-          ${ADULT.map(s => `<span class="chip">${s}</span>`).join("")}
-        </div>
+        ${SIZE_ROWS}
         <p class="adult-msg"></p>
+      </div>
+      <div class="card-foot">
+        <a class="btn primary" href="designs/${encodeURIComponent(p.slug)}.html"
+           aria-label="View all ${p.colours.length} colours of ${h(p.title)}">View</a>
       </div>
     </div>`;
 
@@ -464,6 +625,10 @@ PRODUCTS.forEach((p, pi) => {
     list.appendChild(li);
   });
 
+  const enlarge = card.querySelector(".btn-enlarge");
+  enlarge.addEventListener("click", () =>
+    openLb(pi, +card.dataset.colour, enlarge));
+
   grid.appendChild(card);
   select(card, pi, 0);
 });
@@ -479,8 +644,9 @@ function select(card, pi, ci){
   img.onerror = () => shot.classList.remove("loading");
   img.src = src(p, colour);
   img.alt = `${p.title} ${p.type.toLowerCase()} in ${colour.name} — front and back`;
-  shot.setAttribute("aria-label", `Enlarge ${p.title} in ${colour.name}`);
   card.querySelector(".cname").textContent = colour.name;
+  card.querySelector(".btn-enlarge").setAttribute(
+    "aria-label", `Click to enlarge ${p.title} in ${colour.name}`);
   card.querySelectorAll(".swatch").forEach((b, i) =>
     b.setAttribute("aria-pressed", i === ci ? "true" : "false"));
   card.classList.toggle("is-adult-only", colour.adultOnly);
@@ -489,71 +655,18 @@ function select(card, pi, ci){
     `${colour.name} is available in adult sizes only.`;
 }
 
-/* ---------- Lightbox ---------- */
-const lb = document.getElementById("lightbox");
-const lbImg = document.getElementById("lbImg");
-const lbCap = document.getElementById("lbCap");
-let lbProduct = 0, lbColour = 0, lbOpener = null;
-const regions = () => [document.querySelector("header"),
-                       document.querySelector(".toolbar"),
-                       document.querySelector("main"),
-                       document.querySelector("footer")];
-
-function openLb(pi, ci, opener){
-  lbProduct = pi; lbColour = ci; lbOpener = opener || null;
-  paintLb(); lb.classList.add("open");
-  document.body.style.overflow = "hidden";
-  regions().forEach(el => el && el.setAttribute("inert", ""));
-  document.getElementById("lbClose").focus();
-}
+/* ---------- Lightbox hooks ---------- */
+const lbColoursFor = pi => PRODUCTS[pi].colours;
+const onLbStep = (pi, ci) => select(grid.children[pi], pi, ci);
 function paintLb(){
-  const p = PRODUCTS[lbProduct], c = p.colours[lbColour];
+  const p = PRODUCTS[lbItem], c = p.colours[lbColour];
   lbImg.src = src(p, c);
   lbImg.alt = `${p.title} ${p.type.toLowerCase()} in ${c.name} — front and back`;
   lbCap.innerHTML =
-    `<strong>${p.type} · ${p.n ? "Design " + p.n + " · " : ""}${p.title}</strong>` +
-    ` &nbsp;<span>${c.name}${c.adultOnly ? " — adult sizes only" : ""}</span>`;
+    `<strong>${h(p.type)} · ${p.n ? "Design " + p.n + " · " : ""}${h(p.title)}</strong>` +
+    ` &nbsp;<span>${h(c.name)}${c.adultOnly ? " — adult sizes only" : ""}</span>`;
 }
-function stepLb(dir){
-  const p = PRODUCTS[lbProduct];
-  lbColour = (lbColour + dir + p.colours.length) % p.colours.length;
-  paintLb();
-  select(grid.children[lbProduct], lbProduct, lbColour);
-}
-function closeLb(){
-  lb.classList.remove("open");
-  document.body.style.overflow = "";
-  regions().forEach(el => el && el.removeAttribute("inert"));
-  if (lbOpener) lbOpener.focus();
-  lbOpener = null;
-}
-
-function openFrom(shot){
-  const card = shot.closest(".card");
-  openLb(+card.dataset.index, +card.dataset.colour, shot);
-}
-grid.addEventListener("click", e => {
-  const shot = e.target.closest(".shot");
-  if (shot) openFrom(shot);
-});
-grid.addEventListener("keydown", e => {
-  if (e.key !== "Enter" && e.key !== " ") return;
-  const shot = e.target.closest(".shot");
-  if (!shot) return;
-  e.preventDefault();
-  openFrom(shot);
-});
-
-document.getElementById("lbClose").addEventListener("click", closeLb);
-document.getElementById("lbPrev").addEventListener("click", () => stepLb(-1));
-document.getElementById("lbNext").addEventListener("click", () => stepLb(1));
-lb.addEventListener("click", e => { if (e.target === lb) closeLb(); });
-document.addEventListener("keydown", e => {
-  if (!lb.classList.contains("open")) return;
-  if (e.key === "Escape") closeLb();
-  if (e.key === "ArrowLeft") stepLb(-1);
-  if (e.key === "ArrowRight") stepLb(1);
-});
+__LIGHTBOX_JS__
 
 setFilter("all");
 </script>
@@ -562,44 +675,171 @@ setFilter("all");
 """
 
 
+# --------------------------------------------------------------------------
+# Per-design page
+# --------------------------------------------------------------------------
+
+DESIGN_BODY = r"""
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-text">
+      <a class="back" href="../index.html">&#8249;&nbsp; All designs</a>
+      <span class="eyebrow">__KICKER__</span>
+      <h1>__DESIGN_TITLE__</h1>
+      <p>__COLOUR_COUNT__ colours, front and back. Click any image to enlarge it,
+         then use the arrows to move between colours.</p>
+    </div>
+    <img class="logo" src="../__LOGO__" alt="Stafford Shotokan Karate club logo">
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="design-intro">
+    <div class="sizes">
+      __SIZE_ROWS__
+    </div>
+    <a class="btn" href="../index.html">&#8249;&nbsp; Back to all designs</a>
+  </div>
+
+  __ADULT_NOTE__
+
+  <div class="colour-grid">
+    __TILES__
+  </div>
+</main>
+__FOOTER__
+__LIGHTBOX__
+<script>
+const DESIGN = __DATA__;
+
+const src = c =>
+  "../" + DESIGN.path.split("/").map(encodeURIComponent).join("/") + "/" +
+  encodeURIComponent(c.file) + ".png";
+
+document.querySelectorAll(".btn-enlarge").forEach(btn => {
+  btn.addEventListener("click", () => openLb(0, +btn.dataset.colour, btn));
+});
+
+const lbColoursFor = () => DESIGN.colours;
+const onLbStep = () => {};
+function paintLb(){
+  const c = DESIGN.colours[lbColour];
+  lbImg.src = src(c);
+  lbImg.alt = `${DESIGN.title} ${DESIGN.type.toLowerCase()} in ${c.name} — front and back`;
+  lbCap.innerHTML =
+    `<strong>${DESIGN.type} · ${DESIGN.n ? "Design " + DESIGN.n + " · " : ""}${DESIGN.title}</strong>` +
+    ` &nbsp;<span>${c.name}${c.adultOnly ? " — adult sizes only" : ""}</span>`;
+}
+__LIGHTBOX_JS__
+</script>
+</body>
+</html>
+"""
+
+
+def esc(s):
+    return (s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+             .replace('"', "&quot;"))
+
+
+def url_path(path):
+    from urllib.parse import quote
+    return "/".join(quote(seg, safe="") for seg in path.split("/"))
+
+
+def design_page(p):
+    tiles = []
+    for ci, c in enumerate(p["colours"]):
+        img = f'../{url_path(p["path"])}/{url_path(c["file"])}.png'
+        tag = ('<span class="tag">Adult sizes only</span>' if c["adultOnly"] else "")
+        tiles.append(f"""
+    <article class="colour-card">
+      <div class="colour-bar">
+        <span class="dot" style="background:{c['hex']}" aria-hidden="true"></span>
+        <h2>{esc(c['name'])}</h2>
+        {tag}
+      </div>
+      <div class="shot">
+        <img src="{img}" width="{p['w']}" height="{p['h']}"
+             loading="lazy" decoding="async"
+             alt="{esc(p['title'])} {esc(p['type'].lower())} in {esc(c['name'])} — front and back">
+        <button class="btn btn-enlarge" type="button" data-colour="{ci}"
+                aria-label="Click to enlarge {esc(c['name'])}">Click to Enlarge</button>
+      </div>
+      <p class="views">Front &nbsp;·&nbsp; Back</p>
+    </article>""")
+
+    note = adult_note(p["colours"])
+
+    kicker = p["type"] + (f" · Design {p['n']}" if p["n"] else "")
+    title = f"{p['title']} — {p['type']} — Stafford Shotokan Karate"
+
+    body = (DESIGN_BODY
+            .replace("__KICKER__", esc(kicker))
+            .replace("__DESIGN_TITLE__", esc(p["title"]))
+            .replace("__COLOUR_COUNT__", str(len(p["colours"])))
+            .replace("__LOGO__", LOGO)
+            .replace("__SIZE_ROWS__", size_rows())
+            .replace("__ADULT_NOTE__", note)
+            .replace("__TILES__", "\n".join(tiles))
+            .replace("__FOOTER__", FOOTER)
+            .replace("__LIGHTBOX__", LIGHTBOX_HTML)
+            .replace("__LIGHTBOX_JS__", LIGHTBOX_JS)
+            .replace("__DATA__", json.dumps(p, ensure_ascii=False, indent=2)))
+    return head(title) + body
+
+
+# --------------------------------------------------------------------------
+
 def main():
     print("Scanning...")
     products = scan()
     if not products:
         sys.exit("No product folders found.")
 
-    # Collect the adult-only colours actually present, for the banner.
-    adult = []
-    for p in products:
-        for c in p["colours"]:
-            if c["adultOnly"] and c["name"] not in [a["name"] for a in adult]:
-                adult.append(c)
-
-    dots = "".join(f'<i style="background:{c["hex"]}"></i>' for c in adult)
-    names = " and ".join(filter(None, [
-        ", ".join(c["name"] for c in adult[:-1]),
-        adult[-1]["name"] if adult else "",
-    ])) if adult else ""
-    verb = "is" if len(adult) == 1 else "are"
-
-    html = (TEMPLATE
-            .replace("__TITLE__", SITE_TITLE)
-            .replace("__EYEBROW__", EYEBROW)
-            .replace("__LOGO__", LOGO)
-            .replace("__ADULT_DOTS__", dots)
-            .replace("__ADULT_NAMES__", names)
-            .replace("__ADULT_VERB__", verb)
-            .replace("__KIDS__", json.dumps(KIDS_SIZES, ensure_ascii=False))
-            .replace("__ADULT__", json.dumps(ADULT_SIZES, ensure_ascii=False))
-            .replace("__DATA__", json.dumps(products, ensure_ascii=False, indent=2)))
+    # Store front ----------------------------------------------------------
+    index = head(SITE_TITLE) + (
+        INDEX_BODY
+        .replace("__EYEBROW__", EYEBROW)
+        .replace("__TITLE__", SITE_TITLE)
+        .replace("__LOGO__", LOGO)
+        .replace("__ADULT_NOTE__",
+                 adult_note([c for p in products for c in p["colours"]]))
+        .replace("__FOOTER__", FOOTER)
+        .replace("__LIGHTBOX__", LIGHTBOX_HTML)
+        .replace("__LIGHTBOX_JS__", LIGHTBOX_JS)
+        .replace("${SIZE_ROWS}", size_rows())
+        .replace("__KIDS__", json.dumps(KIDS_SIZES, ensure_ascii=False))
+        .replace("__ADULT__", json.dumps(ADULT_SIZES, ensure_ascii=False))
+        .replace("__DATA__", json.dumps(products, ensure_ascii=False, indent=2)))
 
     with open(OUT, "w", encoding="utf-8", newline="\n") as f:
-        f.write(html)
+        f.write(index)
+
+    # Design pages ---------------------------------------------------------
+    os.makedirs(DESIGN_DIR, exist_ok=True)
+    wanted = set()
+    for p in products:
+        name = p["slug"] + ".html"
+        wanted.add(name)
+        with open(os.path.join(DESIGN_DIR, name),
+                  "w", encoding="utf-8", newline="\n") as f:
+            f.write(design_page(p))
+
+    # Clear out pages for designs that no longer exist.
+    for stale in sorted(set(os.listdir(DESIGN_DIR)) - wanted):
+        if not stale.endswith(".html"):
+            continue
+        try:
+            os.remove(os.path.join(DESIGN_DIR, stale))
+            print(f"  removed stale page: designs/{stale}")
+        except OSError as e:
+            print(f"  ! could not remove designs/{stale}: {e}")
 
     by_type = {}
     for p in products:
         by_type.setdefault(p["type"], []).append(p)
-    print(f"\nWrote {os.path.relpath(OUT, HERE)}")
+    print(f"\nWrote index.html + {len(products)} pages in designs/")
     for t, items in by_type.items():
         print(f"  {t}: {len(items)} designs, "
               f"{sum(len(i['colours']) for i in items)} images")
