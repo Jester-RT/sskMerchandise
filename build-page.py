@@ -110,7 +110,7 @@ def scan():
     types = [d for d in os.listdir(HERE)
              if os.path.isdir(os.path.join(HERE, d))
              and not d.startswith(".")
-             and d not in ("designs", "cards")]
+             and d not in ("designs", "squarespace")]
     swatch_cache = {}
     products = []
 
