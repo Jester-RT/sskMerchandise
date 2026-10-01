@@ -45,6 +45,15 @@ IMG_DIR = os.path.join(OUT_DIR, "img")
 
 PAGES_BASE = "https://jester-rt.github.io/sskMerchandise/squarespace/img/"
 
+# Price list shown above the cards: (garment, kids' price, adults' price).
+PRICES = [
+    ("T-Shirts", "£20", "£25"),
+    ("Hoodies", "£25", "£35"),
+]
+
+ORDER_NOTE = ("Orders for clothing should be given to a club committee member at a "
+              "training session. Please indicate design number, colour and size when ordering.")
+
 # Reuse the scanner, ordering and size rules from the store-page builder.
 _spec = importlib.util.spec_from_file_location("build_page", os.path.join(HERE, "build-page.py"))
 bp = importlib.util.module_from_spec(_spec)
@@ -138,26 +147,41 @@ def css(max_colours, types):
 .ssk-shop .ssk-pic .ssk-big,.ssk-shop .ssk-pic .ssk-close{display:none}
 /* Full-screen view: a checkbox per card, toggled by tapping the picture */
 .ssk-shop .ssk-zoom:checked~.ssk-pic{position:fixed;inset:0;z-index:2147483000;
-  aspect-ratio:auto;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-im{cursor:zoom-out;min-height:100%;
+  aspect-ratio:auto;overflow:hidden;overscroll-behavior:contain}
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-im{cursor:zoom-out;min-height:100%;padding-bottom:70px;
   align-items:center;justify-content:center}
 .ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-small{display:none}
-.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-big{display:block;width:auto;height:auto;
-  max-width:100%;max-height:100vh;max-height:100dvh}
+.ssk-shop .ssk-pic .ssk-bw{display:none}
+/* One garment at a time: the image is twice the frame's width, slid left for the back */
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-bw{display:block;position:relative;overflow:hidden;
+  aspect-ratio:var(--har);width:min(94vw,calc(84vh * var(--har)));
+  width:min(94vw,calc(84dvh * var(--har)))}
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-big{display:block;width:200%;height:100%;max-width:none;
+  object-fit:fill;transition:transform .35s ease}
+.ssk-shop .ssk-back:checked~.ssk-pic .ssk-big{transform:translateX(-50%)}
+.ssk-shop .ssk-flip{display:none}
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-flip{display:block;position:fixed;left:50%;bottom:22px;
+  transform:translateX(-50%);z-index:1;cursor:pointer;padding:13px 26px;border-radius:999px;
+  background:#070402;color:#fff;font-size:17px;font-weight:700;line-height:1;white-space:nowrap;
+  box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.ssk-shop .ssk-flip .ssk-to-front,.ssk-shop .ssk-back:checked~.ssk-pic .ssk-to-back{display:none}
+.ssk-shop .ssk-back:checked~.ssk-pic .ssk-to-front{display:inline}
+.ssk-shop .ssk-back:focus-visible~.ssk-pic .ssk-flip{outline:3px solid var(--green);outline-offset:3px}
 .ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-close{display:grid;place-items:center;position:fixed;
   top:14px;right:14px;z-index:1;width:46px;height:46px;border-radius:50%;cursor:pointer;
   background:rgba(7,4,2,.82);color:#fff;font-size:28px;line-height:1;font-weight:400}
 .ssk-shop .ssk-zoom:focus-visible~.ssk-pic{outline:3px solid var(--green);outline-offset:-3px}
-/* Tall screens: show the picture at full height and swipe between front and back */
-@media (orientation:portrait){
-  .ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-im{justify-content:flex-start}
-  .ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-big{max-width:none;max-height:none;
-    flex:none;height:min(100vh,190vw);height:min(100dvh,190vw)}
-}
 .ssk-shop .ssk-body{padding:14px 16px 18px}
+.ssk-shop .ssk-head{display:flex;align-items:center;gap:14px;margin:0 0 14px}
+.ssk-shop .ssk-no{flex:none;width:64px;height:64px;border-radius:14px;background:var(--green);
+  color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1}
+.ssk-shop .ssk-no small{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+.ssk-shop .ssk-no b{font-size:32px;font-weight:800;margin-top:3px}
+.ssk-shop .ssk-ref{margin:0 0 2px;font-size:15px;font-weight:800;letter-spacing:.06em;
+  text-transform:uppercase;color:#3c6e14}
 .ssk-shop .ssk-kicker{margin:0 0 2px;font-size:12px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:#9b8c7e}
-.ssk-shop .ssk-title{margin:0 0 12px;font-size:20px;font-weight:700;line-height:1.2;color:var(--ink)}
+.ssk-shop .ssk-title{margin:0;font-size:20px;font-weight:700;line-height:1.2;color:var(--ink)}
 .ssk-shop .ssk-cname{margin:0 0 10px;font-size:14px;color:var(--muted);min-height:1.4em}
 .ssk-shop .ssk-cname>span{display:none}
 .ssk-shop .ssk-cname b{color:var(--ink)}
@@ -170,9 +194,19 @@ def css(max_colours, types):
 .ssk-shop .ssk-sizes{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
 .ssk-shop .ssk-sizes b{color:var(--ink)}
 .ssk-shop .ssk-note{color:#823d0e}
-.ssk-shop .ssk-tip{margin:0 0 16px;font-size:15px;line-height:1.5;color:var(--page-text)}
-.ssk-shop .ssk-badge{display:inline-block;width:18px;height:18px;border-radius:50%;
-  background:#823d0e;color:#fff;font-size:11px;font-weight:700;line-height:18px;
+.ssk-shop .ssk-tip{margin:0 0 20px;font-size:18px;line-height:1.5;color:var(--page-text)}
+.ssk-shop .ssk-intro{color:var(--page-text);margin:0 0 28px;font-size:18px;line-height:1.5}
+.ssk-shop .ssk-intro-h{margin:0 0 10px;font-size:22px;font-weight:700;color:var(--page-text)}
+.ssk-shop .ssk-prices{border-collapse:collapse;width:100%;max-width:440px;margin:0 0 18px;
+  font-size:18px;color:var(--page-text)}
+.ssk-shop .ssk-prices th,.ssk-shop .ssk-prices td{padding:10px 14px;text-align:left;
+  border-bottom:1px solid rgba(255,255,255,.25)}
+.ssk-shop .ssk-prices thead th{font-size:13px;letter-spacing:.1em;text-transform:uppercase;
+  color:#bf9c05;border-bottom:2px solid #bf9c05}
+.ssk-shop .ssk-prices td{font-weight:700;font-size:20px}
+.ssk-shop .ssk-intro p{margin:0;max-width:60ch}
+.ssk-shop .ssk-badge{display:inline-block;width:22px;height:22px;border-radius:50%;
+  background:#823d0e;color:#fff;font-size:13px;font-weight:700;line-height:22px;
   text-align:center;vertical-align:1px;box-shadow:0 0 0 1px rgba(255,255,255,.6)}
 """ + "\n".join(show) + "\n"
 
@@ -184,7 +218,8 @@ def card(p, base):
     default = next((i for name in DEFAULT_COLOURS for i, c in enumerate(cols) if c["file"] == name), 0)
     w, h = image_size(os.path.join(IMG_DIR, p["slug"], cols[0]["file"] + ".jpg"))
 
-    zid = f"ssk-z-{did}"
+    zid, bid = f"ssk-z-{did}", f"ssk-b-{did}"
+    hw, hh = image_size(os.path.join(IMG_DIR, p["slug"], cols[0]["file"] + "-large.jpg"))
     radios, pics, names, swatches = [], [], [], []
     for k, c in enumerate(cols):
         rid = f"ssk-{did}-{k}"
@@ -197,7 +232,8 @@ def card(p, base):
         pics.append(f'<label for="{zid}" class="ssk-im ssk-i{k}">'
                     f'<img class="ssk-small" src="{esc(url)}" alt="{esc(alt)}" loading="lazy" '
                     f'width="{w}" height="{h}">'
-                    f'<img class="ssk-big" src="{esc(big)}" alt="{esc(alt)}" loading="lazy"></label>')
+                    f'<span class="ssk-bw"><img class="ssk-big" src="{esc(big)}" alt="{esc(alt)}" '
+                    f'loading="lazy"></span></label>')
         adult = " · adult sizes only" if c["adultOnly"] else ""
         names.append(f'<span class="ssk-n{k}">Colour: <b>{esc(c["name"])}</b>'
                      f'<span class="ssk-note">{adult}</span></span>')
@@ -212,20 +248,35 @@ def card(p, base):
         sizes += (f'<br><span class="ssk-note">{esc(join_names(adult))} '
                   f'{"is" if len(adult) == 1 else "are"} adult sizes only.</span>')
 
-    kicker = f"{singular(p['type'])} · Design {p['n']}" if p["n"] is not None else singular(p["type"])
+    ref = f"{singular(p['type'])} · Design {p['n']}" if p["n"] is not None else singular(p["type"])
+    num = (f'<div class="ssk-no" aria-hidden="true"><small>No.</small><b>{p["n"]}</b></div>'
+           if p["n"] is not None else "")
     return (f'<article class="ssk-card ssk-t-{ptype}">'
             + "".join(radios)
             + f'<input class="ssk-hide ssk-zoom" type="checkbox" id="{zid}" '
               f'aria-label="Full-screen view of {esc(p["title"])}">'
-            + f'<div class="ssk-pic" style="--ar:{w}/{h}">' + "".join(pics)
+            + f'<input class="ssk-hide ssk-back" type="checkbox" id="{bid}" aria-label="Show the back">'
+            + f'<div class="ssk-pic" style="--ar:{w}/{h};--har:{hw / 2 / hh:.4f}">' + "".join(pics)
+            + f'<label for="{bid}" class="ssk-flip"><span class="ssk-to-back">Show back &rarr;</span>'
+              f'<span class="ssk-to-front">&larr; Show front</span></label>'
             + f'<label for="{zid}" class="ssk-close" aria-label="Close">&times;</label></div>'
             + '<div class="ssk-body">'
-            + f'<p class="ssk-kicker">{esc(kicker)}</p>'
-            + f'<h3 class="ssk-title">{esc(p["title"])}</h3>'
+            + f'<div class="ssk-head">{num}<div>'
+            + f'<p class="ssk-ref">{esc(ref)}</p>'
+            + f'<h3 class="ssk-title">{esc(p["title"])}</h3></div></div>'
             + '<p class="ssk-cname">' + "".join(names) + "</p>"
             + '<div class="ssk-sw">' + "".join(swatches) + "</div>"
             + f'<p class="ssk-sizes">{sizes}</p>'
             + "</div></article>")
+
+
+def intro():
+    rows = "".join(f"<tr><th scope=\"row\">{esc(g)}</th><td>{esc(k)}</td><td>{esc(a)}</td></tr>"
+                   for g, k, a in PRICES)
+    return ('<div class="ssk-intro"><p class="ssk-intro-h">Prices</p>'
+            '<table class="ssk-prices"><thead><tr><th></th><th scope="col">Children</th>'
+            f'<th scope="col">Adults</th></tr></thead><tbody>{rows}</tbody></table>'
+            f'<p>{esc(ORDER_NOTE)}</p></div>')
 
 
 def snippet(products, base):
@@ -241,6 +292,7 @@ def snippet(products, base):
     return ("<!-- SSK clothing range. Generated by build-squarespace.py; edit there, not here. -->\n"
             f"<style>{css(max_colours, types)}</style>\n"
             '<div class="ssk-shop">'
+            + intro()
             + "".join(tabs_in)
             + '<div class="ssk-tabs">' + "".join(tabs) + "</div>"
             + '<p class="ssk-tip">Tap a colour to see it. Tap a picture to see it full screen. '

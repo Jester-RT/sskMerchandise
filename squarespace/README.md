@@ -32,3 +32,9 @@ needed.
 The line of help text above the cards is light-coloured for the club's black
 page background. If the listing is ever placed on a light page, change
 `--page-text` near the top of the CSS in `build-squarespace.py`.
+
+## Prices and ordering note
+
+The price table and the ordering line at the top come from `PRICES` and
+`ORDER_NOTE` near the top of `build-squarespace.py`. Change them there and
+re-run the script.
