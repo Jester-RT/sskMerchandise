@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Builds a banner showing the front of every design, for linking to the
+Builds a banner showing every design (front, or back where most of the
+print is), for linking to the
 clothing page from elsewhere on the club site.
 
 Writes:   squarespace/clothing-banner.png
@@ -31,17 +32,27 @@ W, H = 2400, 1000
 PER_ROW = 8
 PAD = 50
 
+# Designs whose main print is on the back, shown back-side in the banner.
+BACK_SIDE = {
+    "T-Shirts": {2, 3, 8, 11, 13, 14, 17},
+    "Hoodies": {1, 2, 4, 5},
+}
+
 # Colours to cycle through, so neighbouring designs differ. Black garments
 # are left out because they disappear on the site's black background.
 CYCLE = ["Fire_Red", "Arctic_White", "Airforce_Blue", "Bottle_Green", "Orange_Crush",
          "Natural_Stone", "Purple", "Blue", "Maroon", "New_French_Navy", "Dusty_Purple"]
 
 
-def front(path):
+def halves(path):
+    """The front (left) and back (right) garments, each trimmed."""
     im = Image.open(path).convert("RGBA")
-    im = im.crop((0, 0, im.width // 2, im.height))
-    box = im.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox()
-    return im.crop(box) if box else im
+    out = []
+    for box in ((0, 0, im.width // 2, im.height), (im.width // 2, 0, im.width, im.height)):
+        half = im.crop(box)
+        bbox = half.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox()
+        out.append(half.crop(bbox) if bbox else half)
+    return out
 
 
 def main():
@@ -60,7 +71,8 @@ def main():
                 choice, i = cand, i + k + 1
                 break
         choice = choice or files[0]
-        im = front(os.path.join(HERE, p["path"], choice + ".png"))
+        front, back = halves(os.path.join(HERE, p["path"], choice + ".png"))
+        im = back if p["n"] in BACK_SIDE.get(p["type"], set()) else front
         scale = min((cell_w * 0.92) / im.width, (cell_h * 0.92) / im.height)
         im = im.resize((round(im.width * scale), round(im.height * scale)), Image.LANCZOS)
         r, c = divmod(n, PER_ROW)
