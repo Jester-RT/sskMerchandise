@@ -1,7 +1,8 @@
 # Squarespace clothing listing
 
 `snippet.html` is a ready-to-paste listing of every t-shirt and hoodie design.
-Each design is a card with a picture, colour dots that swap the picture, and
+Each design is a card with a picture (tap it for a full-screen view that
+stays on the page), colour dots that swap the picture, and
 the sizes. Cards stack one per row on phones and sit side by side on wider
 screens. It is plain HTML and CSS with no JavaScript, so it works on every
 Squarespace plan.
@@ -25,3 +26,9 @@ Add or change the PNGs under `T-Shirts/` or `Hoodies/`, run
 `python build-squarespace.py`, merge to `main`, then paste the new
 `snippet.html` over the old one. If only a picture changed, re-pasting isn't
 needed.
+
+## Page background
+
+The line of help text above the cards is light-coloured for the club's black
+page background. If the listing is ever placed on a light page, change
+`--page-text` near the top of the CSS in `build-squarespace.py`.

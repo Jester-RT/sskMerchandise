@@ -50,7 +50,8 @@ _spec = importlib.util.spec_from_file_location("build_page", os.path.join(HERE, 
 bp = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(bp)
 
-IMG_WIDTH = 1000          # wide enough for a sharp picture on a phone
+IMG_WIDTH = 1000          # wide enough for a sharp picture on a phone card
+ZOOM_WIDTH = 2000         # full-screen view, only downloaded when opened
 IMG_BG = (243, 236, 225)  # matches the card's image panel, --ink-100
 
 # The colour each card opens on, first match wins.
@@ -73,7 +74,7 @@ def join_names(names):
 # Images
 # --------------------------------------------------------------------------
 
-def web_image(src, dst):
+def web_image(src, dst, width):
     """A trimmed, flattened, web-sized JPEG copy of a front-and-back PNG."""
     if os.path.exists(dst) and os.path.getmtime(dst) >= os.path.getmtime(src):
         return
@@ -84,8 +85,8 @@ def web_image(src, dst):
     pad = round(im.width * 0.03)
     flat = Image.new("RGB", (im.width + 2 * pad, im.height + 2 * pad), IMG_BG)
     flat.paste(im, (pad, pad), im)
-    if flat.width > IMG_WIDTH:
-        flat = flat.resize((IMG_WIDTH, round(flat.height * IMG_WIDTH / flat.width)), Image.LANCZOS)
+    if flat.width > width:
+        flat = flat.resize((width, round(flat.height * width / flat.width)), Image.LANCZOS)
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     flat.save(dst, "JPEG", quality=82, optimize=True, progressive=True)
 
@@ -104,6 +105,7 @@ def css(max_colours, types):
     for k in range(max_colours):
         show.append(f".ssk-shop .ssk-r{k}:checked~.ssk-pic .ssk-i{k},"
                     f".ssk-shop .ssk-r{k}:checked~.ssk-body .ssk-n{k}{{display:block}}")
+        show.append(f".ssk-shop .ssk-r{k}:checked~.ssk-zoom:checked~.ssk-pic .ssk-i{k}{{display:flex}}")
         show.append(f".ssk-shop .ssk-r{k}:checked~.ssk-body .ssk-s{k}"
                     f"{{box-shadow:0 0 0 3px #fff,0 0 0 5px #4f8f1a}}")
         show.append(f".ssk-shop .ssk-r{k}:focus-visible~.ssk-body .ssk-s{k}"
@@ -116,7 +118,8 @@ def css(max_colours, types):
         for o in others:
             show.append(f".ssk-shop #ssk-f-{slug}:checked~.ssk-grid .ssk-t-{o}{{display:none}}")
     return """
-.ssk-shop{--ink:#1c140f;--muted:#6f5d4f;--line:#e6ddd0;--panel:#f3ece1;--green:#4f8f1a;
+.ssk-shop{--page-text:#f3ece1; /* text that sits on the page background (black) */
+  --ink:#1c140f;--muted:#6f5d4f;--line:#e6ddd0;--panel:#f3ece1;--green:#4f8f1a;
   font-family:inherit;color:var(--ink);max-width:1200px;margin:0 auto}
 .ssk-shop *{box-sizing:border-box}
 .ssk-shop .ssk-hide{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}
@@ -130,8 +133,27 @@ def css(max_colours, types):
 .ssk-shop .ssk-card{position:relative;background:#fff;border:1px solid var(--line);
   border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
 .ssk-shop .ssk-pic{background:var(--panel);aspect-ratio:var(--ar);position:relative}
-.ssk-shop .ssk-pic a{display:none;width:100%;height:100%}
+.ssk-shop .ssk-pic .ssk-im{display:none;width:100%;height:100%;cursor:zoom-in;margin:0}
 .ssk-shop .ssk-pic img{display:block;width:100%;height:100%;object-fit:contain;margin:0}
+.ssk-shop .ssk-pic .ssk-big,.ssk-shop .ssk-pic .ssk-close{display:none}
+/* Full-screen view: a checkbox per card, toggled by tapping the picture */
+.ssk-shop .ssk-zoom:checked~.ssk-pic{position:fixed;inset:0;z-index:2147483000;
+  aspect-ratio:auto;overflow:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-im{cursor:zoom-out;min-height:100%;
+  align-items:center;justify-content:center}
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-small{display:none}
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-big{display:block;width:auto;height:auto;
+  max-width:100%;max-height:100vh;max-height:100dvh}
+.ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-close{display:grid;place-items:center;position:fixed;
+  top:14px;right:14px;z-index:1;width:46px;height:46px;border-radius:50%;cursor:pointer;
+  background:rgba(7,4,2,.82);color:#fff;font-size:28px;line-height:1;font-weight:400}
+.ssk-shop .ssk-zoom:focus-visible~.ssk-pic{outline:3px solid var(--green);outline-offset:-3px}
+/* Tall screens: show the picture at full height and swipe between front and back */
+@media (orientation:portrait){
+  .ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-im{justify-content:flex-start}
+  .ssk-shop .ssk-zoom:checked~.ssk-pic .ssk-big{max-width:none;max-height:none;
+    flex:none;height:min(100vh,190vw);height:min(100dvh,190vw)}
+}
 .ssk-shop .ssk-body{padding:14px 16px 18px}
 .ssk-shop .ssk-kicker{margin:0 0 2px;font-size:12px;font-weight:700;letter-spacing:.1em;
   text-transform:uppercase;color:#9b8c7e}
@@ -148,7 +170,10 @@ def css(max_colours, types):
 .ssk-shop .ssk-sizes{margin:0;font-size:13px;color:var(--muted);line-height:1.5}
 .ssk-shop .ssk-sizes b{color:var(--ink)}
 .ssk-shop .ssk-note{color:#823d0e}
-.ssk-shop .ssk-tip{margin:0 0 16px;font-size:14px;color:var(--muted)}
+.ssk-shop .ssk-tip{margin:0 0 16px;font-size:15px;line-height:1.5;color:var(--page-text)}
+.ssk-shop .ssk-badge{display:inline-block;width:18px;height:18px;border-radius:50%;
+  background:#823d0e;color:#fff;font-size:11px;font-weight:700;line-height:18px;
+  text-align:center;vertical-align:1px;box-shadow:0 0 0 1px rgba(255,255,255,.6)}
 """ + "\n".join(show) + "\n"
 
 
@@ -159,6 +184,7 @@ def card(p, base):
     default = next((i for name in DEFAULT_COLOURS for i, c in enumerate(cols) if c["file"] == name), 0)
     w, h = image_size(os.path.join(IMG_DIR, p["slug"], cols[0]["file"] + ".jpg"))
 
+    zid = f"ssk-z-{did}"
     radios, pics, names, swatches = [], [], [], []
     for k, c in enumerate(cols):
         rid = f"ssk-{did}-{k}"
@@ -167,8 +193,11 @@ def card(p, base):
                       f'id="{rid}"{checked} aria-label="{esc(c["name"])}">')
         url = f"{base}{p['slug']}/{c['file']}.jpg"
         alt = f"{singular(p['type'])} design {p['n']}, {p['title']}, in {c['name']}, front and back"
-        pics.append(f'<a class="ssk-i{k}" href="{esc(url)}" target="_blank" rel="noopener">'
-                    f'<img src="{esc(url)}" alt="{esc(alt)}" loading="lazy" width="{w}" height="{h}"></a>')
+        big = f"{base}{p['slug']}/{c['file']}-large.jpg"
+        pics.append(f'<label for="{zid}" class="ssk-im ssk-i{k}">'
+                    f'<img class="ssk-small" src="{esc(url)}" alt="{esc(alt)}" loading="lazy" '
+                    f'width="{w}" height="{h}">'
+                    f'<img class="ssk-big" src="{esc(big)}" alt="{esc(alt)}" loading="lazy"></label>')
         adult = " · adult sizes only" if c["adultOnly"] else ""
         names.append(f'<span class="ssk-n{k}">Colour: <b>{esc(c["name"])}</b>'
                      f'<span class="ssk-note">{adult}</span></span>')
@@ -186,7 +215,10 @@ def card(p, base):
     kicker = f"{singular(p['type'])} · Design {p['n']}" if p["n"] is not None else singular(p["type"])
     return (f'<article class="ssk-card ssk-t-{ptype}">'
             + "".join(radios)
-            + f'<div class="ssk-pic" style="--ar:{w}/{h}">' + "".join(pics) + "</div>"
+            + f'<input class="ssk-hide ssk-zoom" type="checkbox" id="{zid}" '
+              f'aria-label="Full-screen view of {esc(p["title"])}">'
+            + f'<div class="ssk-pic" style="--ar:{w}/{h}">' + "".join(pics)
+            + f'<label for="{zid}" class="ssk-close" aria-label="Close">&times;</label></div>'
             + '<div class="ssk-body">'
             + f'<p class="ssk-kicker">{esc(kicker)}</p>'
             + f'<h3 class="ssk-title">{esc(p["title"])}</h3>'
@@ -211,8 +243,8 @@ def snippet(products, base):
             '<div class="ssk-shop">'
             + "".join(tabs_in)
             + '<div class="ssk-tabs">' + "".join(tabs) + "</div>"
-            + '<p class="ssk-tip">Tap a colour to see it. Tap a picture to open it full size. '
-              'Colours marked <b style="color:#823d0e">A</b> come in adult sizes only.</p>'
+            + '<p class="ssk-tip">Tap a colour to see it. Tap a picture to see it full screen. '
+              'Colours marked <span class="ssk-badge">A</span> come in adult sizes only.</p>'
             + '<div class="ssk-grid">\n' + "\n".join(card(p, base) for p in products)
             + "\n</div></div>\n")
 
@@ -221,7 +253,7 @@ PREVIEW = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SSK clothing preview</title>
-<style>body{margin:0;padding:24px 16px;background:#fff;
+<style>body{margin:0;padding:24px 16px;background:#000;
 font-family:"Helvetica Neue",Arial,sans-serif}</style>
 </head><body>
 %s
@@ -238,8 +270,9 @@ def main():
     products = bp.scan()
     for p in products:
         for c in p["colours"]:
-            web_image(os.path.join(HERE, p["path"], c["file"] + ".png"),
-                      os.path.join(IMG_DIR, p["slug"], c["file"] + ".jpg"))
+            src = os.path.join(HERE, p["path"], c["file"] + ".png")
+            web_image(src, os.path.join(IMG_DIR, p["slug"], c["file"] + ".jpg"), IMG_WIDTH)
+            web_image(src, os.path.join(IMG_DIR, p["slug"], c["file"] + "-large.jpg"), ZOOM_WIDTH)
 
     with open(os.path.join(OUT_DIR, "snippet.html"), "w", encoding="utf-8") as fh:
         fh.write(snippet(products, base))
