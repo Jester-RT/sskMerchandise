@@ -28,12 +28,11 @@ bp = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(bp)
 
 W, H = 2400, 1000
-BG = (0, 0, 0)
 PER_ROW = 8
 PAD = 50
 
 # Colours to cycle through, so neighbouring designs differ. Black garments
-# are left out because they disappear on the black background.
+# are left out because they disappear on the site's black background.
 CYCLE = ["Fire_Red", "Arctic_White", "Airforce_Blue", "Bottle_Green", "Orange_Crush",
          "Natural_Stone", "Purple", "Blue", "Maroon", "New_French_Navy", "Dusty_Purple"]
 
@@ -50,7 +49,7 @@ def main():
     rows = -(-len(products) // PER_ROW)
     cell_w = (W - 2 * PAD) / PER_ROW
     cell_h = (H - 2 * PAD) / rows
-    canvas = Image.new("RGBA", (W, H), BG + (255,))
+    canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))  # transparent
     i = 0
     for n, p in enumerate(products):
         files = [c["file"] for c in p["colours"]]
@@ -70,7 +69,7 @@ def main():
         cx = x0 + (c + 0.5) * cell_w
         cy = PAD + (r + 0.5) * cell_h
         canvas.alpha_composite(im, (round(cx - im.width / 2), round(cy - im.height / 2)))
-    canvas.convert("RGB").save(OUT, optimize=True)
+    canvas.save(OUT, optimize=True)
     print(f"Wrote {os.path.relpath(OUT, HERE)} ({len(products)} designs)")
 
 
