@@ -195,9 +195,11 @@ def css(max_colours, types):
 .ssk-shop .ssk-sizes b{color:var(--ink)}
 .ssk-shop .ssk-note{color:#823d0e}
 .ssk-shop .ssk-tip{margin:0 0 20px;font-size:18px;line-height:1.5;color:var(--page-text)}
-.ssk-shop .ssk-intro{color:var(--page-text);margin:0 0 28px;font-size:18px;line-height:1.5}
+.ssk-shop .ssk-intro{color:var(--page-text);margin:0 0 28px;font-size:18px;line-height:1.5;
+  display:grid;gap:24px}
+@media (min-width:768px){.ssk-shop .ssk-intro{grid-template-columns:1fr minmax(300px,440px);gap:48px}}
 .ssk-shop .ssk-intro-h{margin:0 0 10px;font-size:22px;font-weight:700;color:var(--page-text)}
-.ssk-shop .ssk-prices{border-collapse:collapse;width:100%;max-width:440px;margin:0 0 18px;
+.ssk-shop .ssk-prices{border-collapse:collapse;width:100%;max-width:440px;margin:0;
   font-size:18px;color:var(--page-text)}
 .ssk-shop .ssk-prices th,.ssk-shop .ssk-prices td{padding:10px 14px;text-align:left;
   border-bottom:1px solid rgba(255,255,255,.25)}
@@ -273,10 +275,11 @@ def card(p, base):
 def intro():
     rows = "".join(f"<tr><th scope=\"row\">{esc(g)}</th><td>{esc(k)}</td><td>{esc(a)}</td></tr>"
                    for g, k, a in PRICES)
-    return ('<div class="ssk-intro"><p class="ssk-intro-h">Prices</p>'
+    return ('<div class="ssk-intro">'
+            f'<div><p class="ssk-intro-h">Ordering</p><p>{esc(ORDER_NOTE)}</p></div>'
+            '<div><p class="ssk-intro-h">Prices</p>'
             '<table class="ssk-prices"><thead><tr><th></th><th scope="col">Children</th>'
-            f'<th scope="col">Adults</th></tr></thead><tbody>{rows}</tbody></table>'
-            f'<p>{esc(ORDER_NOTE)}</p></div>')
+            f'<th scope="col">Adults</th></tr></thead><tbody>{rows}</tbody></table></div></div>')
 
 
 def snippet(products, base):
