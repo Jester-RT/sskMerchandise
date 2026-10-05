@@ -28,14 +28,15 @@ _spec = importlib.util.spec_from_file_location("build_page", os.path.join(HERE, 
 bp = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(bp)
 
-W, H = 2400, 1000
+W = 2400
+ROW_H = 300  # height grows with the number of rows
 PER_ROW = 8
 PAD = 50
 
 # Designs whose main print is on the back, shown back-side in the banner.
 BACK_SIDE = {
     "T-Shirts": {2, 3, 8, 11, 13, 14, 17},
-    "Hoodies": {1, 2, 4, 5},
+    "Hoodies": {1, 2, 4, 5, 7, 9, 10, 11, 14},
 }
 
 # Colours to cycle through, so neighbouring designs differ. Black garments
@@ -58,6 +59,7 @@ def halves(path):
 def main():
     products = bp.scan()
     rows = -(-len(products) // PER_ROW)
+    H = 2 * PAD + rows * ROW_H
     cell_w = (W - 2 * PAD) / PER_ROW
     cell_h = (H - 2 * PAD) / rows
     canvas = Image.new("RGBA", (W, H), (0, 0, 0, 0))  # transparent
