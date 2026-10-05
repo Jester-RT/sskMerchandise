@@ -41,6 +41,7 @@ LOGO = "ssk-logo-white-300dpi.png"
 # Colours sold in adult sizes only, keyed by product type.
 ADULT_ONLY = {
     "T-Shirts": {"Orange_Crush", "Purple"},
+    "Hoodies": {"Dusty_Purple"},
 }
 
 KIDS_SIZES = ["3–4 yrs", "5–6 yrs", "7–8 yrs", "9–11 yrs", "12–13 yrs"]
@@ -110,7 +111,7 @@ def scan():
     types = [d for d in os.listdir(HERE)
              if os.path.isdir(os.path.join(HERE, d))
              and not d.startswith(".")
-             and d != "designs"]
+             and d not in ("designs", "squarespace")]
     swatch_cache = {}
     products = []
 
