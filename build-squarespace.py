@@ -141,6 +141,10 @@ def css(max_colours, types):
 .ssk-shop .ssk-tabs label:hover{border-color:var(--green)}
 .ssk-shop .ssk-hide:focus-visible~.ssk-tabs{outline:3px solid var(--green);outline-offset:4px;border-radius:12px}
 .ssk-shop .ssk-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+/* Full-width heading per garment type, so t-shirts and hoodies never share a row */
+.ssk-shop .ssk-sec{grid-column:1/-1;margin:16px 0 0;padding:0 0 8px;font-size:24px;font-weight:700;
+  color:var(--page-text);border-bottom:2px solid #bf9c05}
+.ssk-shop .ssk-sec:first-child{margin-top:0}
 .ssk-shop .ssk-card{position:relative;background:#fff;border:1px solid var(--line);
   border-radius:16px;overflow:hidden;display:flex;flex-direction:column}
 .ssk-shop .ssk-pic{background:var(--panel);aspect-ratio:var(--ar);position:relative}
@@ -286,6 +290,16 @@ def intro():
             f'<th scope="col">Adults</th></tr></thead><tbody>{rows}</tbody></table></div></div>')
 
 
+def grid_items(products, base):
+    """Cards, with a full-width heading wherever the garment type changes."""
+    current = None
+    for p in products:
+        if p["type"] != current:
+            current = p["type"]
+            yield f'<p class="ssk-sec ssk-t-{bp.slugify(current)}">{esc(current)}</p>'
+        yield card(p, base)
+
+
 def snippet(products, base):
     types = list(dict.fromkeys(p["type"] for p in products))
     max_colours = max(len(p["colours"]) for p in products)
@@ -304,7 +318,7 @@ def snippet(products, base):
             + '<div class="ssk-tabs">' + "".join(tabs) + "</div>"
             + '<p class="ssk-tip">Tap a colour to see it. Tap a picture to see it full screen. '
               'Colours marked <span class="ssk-badge">A</span> come in adult sizes only.</p>'
-            + '<div class="ssk-grid">\n' + "\n".join(card(p, base) for p in products)
+            + '<div class="ssk-grid">\n' + "\n".join(grid_items(products, base))
             + "\n</div></div>\n")
 
 
