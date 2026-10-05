@@ -254,7 +254,9 @@ def card(p, base):
     adult = [c["name"] for c in cols if c["adultOnly"]]
     kids = f"{bp.KIDS_SIZES[0].split('–')[0]}–{bp.KIDS_SIZES[-1].split('–')[-1]}"  # 3–13 yrs
     sizes = f"<b>Kids</b> {kids} · <b>Adult</b> {bp.ADULT_SIZES[0]}–{bp.ADULT_SIZES[-1]}"
-    if adult:
+    if len(adult) == len(cols):  # every colour is adult-only, so no kids' sizes at all
+        sizes = f'<b>Adult</b> {bp.ADULT_SIZES[0]}–{bp.ADULT_SIZES[-1]} <span class="ssk-note">only</span>'
+    elif adult:
         sizes += (f'<br><span class="ssk-note">{esc(join_names(adult))} '
                   f'{"is" if len(adult) == 1 else "are"} adult sizes only.</span>')
 
